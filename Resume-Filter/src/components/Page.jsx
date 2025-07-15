@@ -11,7 +11,10 @@ import {
   Pagination,
 } from "react-bootstrap";
 import "./Page.css";
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
 const candidates = [
   {
@@ -61,6 +64,7 @@ const candidates = [
 const Page = () => {
   return (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     
     <>
  
@@ -73,6 +77,8 @@ const Page = () => {
       <div className="d-flex flex-wrap gap-2 mb-2">
         
 =======
+=======
+>>>>>>> Stashed changes
     <Container fluid className="page-container">
       <Container fluid className="header-container mb-4">
         <Row className="breadcrumb-section">
@@ -96,6 +102,9 @@ const Page = () => {
           
               <Col>
               <div className="d-flex flex-wrap gap-2 mb-2">
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         <strong>Mandatory Skills:</strong>
         <Badge bg="warning" text="dark">
