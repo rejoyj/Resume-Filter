@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Table, Badge, Form, Row, Col, Button, Pagination } from 'react-bootstrap';
 import './Page.css';
 
+
 const candidates = [
   {
     name: 'Marco Silva',
@@ -49,10 +50,17 @@ const candidates = [
 
 const Page = () => {
   return (
+    
+    <>
+ 
+    <Container fluid className='page-container'>
+    
+       <h4 className="mb-3">Jobs &gt; <strong>Frontend Engineer</strong></h4>
+    </Container>
     <Container fluid className="p-4">
-      <h4 className="mb-3">Jobs &gt; <strong>Frontend Engineer</strong></h4>
-
+      
       <div className="d-flex flex-wrap gap-2 mb-2">
+        
         <strong>Mandatory Skills:</strong>
         <Badge bg="warning" text="dark">Jest</Badge>
         <Badge bg="success">Aria</Badge>
@@ -61,6 +69,7 @@ const Page = () => {
       </div>
 
       <div className="d-flex flex-wrap gap-2 mb-4">
+      
         <strong>Preferred Skills:</strong>
         <Badge bg="warning">Apis</Badge>
         <Badge bg="success">Agile</Badge>
@@ -108,6 +117,7 @@ const Page = () => {
         <Pagination.Next />
       </Pagination>
     </Container>
+    </>
   );
 };
 
