@@ -1,9 +1,4 @@
-/* Header/Navbar */
-.navbar-custom {
-  background-color: #5d3fd3; /* Purple */
-  border-bottom-left-radius: 15px;
-  border-bottom-right-radius: 15px;
-}
+
 
 .brand-text {
   font-weight: bold;
@@ -13,7 +8,7 @@
 
 /* Form Container */
 .form-container {
-  background: #fff8f0;
+  background-color: #7861d3; 
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   max-width: 450px;
@@ -23,6 +18,7 @@
 
 /* Upload Button */
 .upload-btn {
+  margin: 10px;
   background-color: #00796b;
   color: #ffffff;
   border-radius: 30px;

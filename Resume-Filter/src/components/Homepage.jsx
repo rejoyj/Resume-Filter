@@ -15,21 +15,18 @@ const Homepage = () => {
   return (
     <>
       {/* Header */}
-      <Navbar expand="lg" className="navbar-custom shadow-sm">
-        <Container>
-          <Navbar.Brand href="/" className="brand-text">
+     
+
+      {/* Main Content */}
+      <Container className="form-container">
+       
             <img
               src={logo}
               alt="Manvian logo"
               height="40"
               className="d-inline-block align-top"
             />
-          </Navbar.Brand>
-        </Container>
-      </Navbar>
-
-      {/* Main Content */}
-      <Container className="form-container">
+        
         {/* Upload Button */}
         <div className="text-center mb-3">
           <Button className="upload-btn">Upload</Button>
