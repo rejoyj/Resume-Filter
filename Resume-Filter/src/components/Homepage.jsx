@@ -1,4 +1,6 @@
-import React from "react";
+
+
+import React, { useRef } from "react";
 import {
   Navbar,
   Container,
@@ -12,32 +14,61 @@ import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 
 const Homepage = () => {
+  // 1️⃣  reference to the hidden file input
+  const fileInputRef = useRef(null);
+
+  // 2️⃣  fires when the user chooses a file
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length) {
+      // do whatever you need with the chosen files
+      console.log("Selected files:", files);
+      // e.g. upload to server, preview, set state, etc.
+    }
+  };
+
+  // 3️⃣  fires when the Upload button is clicked
+  const handleUploadClick = () => {
+    // trigger the native file‑picker
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
   return (
     <>
       {/* Header */}
       <Container fluid>
-      <Navbar expand="lg" className="navbar-custom shadow-sm">
-        <Container>
-          <Navbar.Brand href="/" className="brand-text">
-            <img
-              src={logo}
-              alt="Manvian logo"
-              height="40"
-              className="d-inline-block align-top"
-            />
-          </Navbar.Brand>
-        </Container>
-      </Navbar>
+        <Navbar expand="lg" className="navbar-custom shadow-sm">
+          <Container>
+            <Navbar.Brand href="/" className="brand-text">
+              <img
+                src={logo}
+                alt="Manvian logo"
+                height="40"
+                className="d-inline-block align-top"
+              />
+            </Navbar.Brand>
+          </Container>
+        </Navbar>
 
-      {/* Main Content */}
-      <Container className="form-container">
-        {/* Upload Button */}
-        <div className="text-center mb-3">
-          <Button className="upload-btn">Upload</Button>
-        </div>
+        {/* Main Content */}
+        <Container className="form-container">
+          {/* ⬇️ Hidden file input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+            multiple   /* optional – remove if you want a single file */
+          />
 
-        {/* Job Title Dropdown */}
-        <Dropdown className="mb-3">
+          {/* Upload Button */}
+          <div className="text-center mb-3">
+            <Button className="upload-btn" onClick={handleUploadClick}>
+              Upload
+            </Button>
+          </div>
+
+          <Dropdown className="mb-3">
            
           <Dropdown.Toggle className="dropdown-job w-100">
             Job Title
@@ -91,8 +122,8 @@ const Homepage = () => {
         <div className="text-center">
           <Button className="submit-btn">Submit</Button>
         </div>
-      </Container>
         </Container>
+      </Container>
     </>
   );
 };
