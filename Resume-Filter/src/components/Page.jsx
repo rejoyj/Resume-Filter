@@ -11,10 +11,6 @@ import {
   Pagination,
 } from "react-bootstrap";
 import "./Page.css";
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
 const candidates = [
   {
@@ -63,118 +59,100 @@ const candidates = [
 
 const Page = () => {
   return (
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    
     <>
- 
-    <Container fluid className='page-container'>
-    
-       <h4 className="mb-3">Jobs &gt; <strong>Frontend Engineer</strong></h4>
-    </Container>
-    <Container fluid className="p-4">
-      
-      <div className="d-flex flex-wrap gap-2 mb-2">
-        
-=======
-=======
->>>>>>> Stashed changes
-    <Container fluid className="page-container">
-      <Container fluid className="header-container mb-4">
-        <Row className="breadcrumb-section">
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb breadcrumb-custom mb-0">
-              <li className="breadcrumb-item">
-                <a href="#" className="text-dark text-decoration-none">
-                  Jobs
-                </a>
-              </li>
-              <li
-                className="breadcrumb-item active fw-bold"
-                aria-current="page"
-              >
-                Frontend Engineer
-              </li>
-            </ol>
-          </nav>
-        </Row>
-        <Row className="Skills-section">
-          
-              <Col>
+      <Container fluid className="page-container">
+        <h4 className="mb-3">
+          Jobs &gt; <strong>Frontend Engineer</strong>
+        </h4>
+
+        {/* Breadcrumb */}
+        <div className="header-container mb-4">
+          <Row className="breadcrumb-section">
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb breadcrumb-custom mb-0">
+                <li className="breadcrumb-item">
+                  <a href="#" className="text-dark text-decoration-none">
+                    Jobs
+                  </a>
+                </li>
+                <li className="breadcrumb-item active fw-bold" aria-current="page">
+                  Frontend Engineer
+                </li>
+              </ol>
+            </nav>
+          </Row>
+
+          {/* Mandatory Skills */}
+          <Row className="Skills-section">
+            <Col>
               <div className="d-flex flex-wrap gap-2 mb-2">
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-        <strong>Mandatory Skills:</strong>
-        <Badge bg="warning" text="dark">
-          Jest
-        </Badge>
-        <Badge bg="success">Aria</Badge>
-        <Badge bg="primary">React</Badge>
-        <Badge bg="secondary">+6</Badge>
-      </div>
-              </Col>
-              <Col>2 of 2</Col>
-            
-        </Row>
-      </Container>
+                <strong>Mandatory Skills:</strong>
+                <Badge bg="warning" text="dark">Jest</Badge>
+                <Badge bg="success">Aria</Badge>
+                <Badge bg="primary">React</Badge>
+                <Badge bg="secondary">+6</Badge>
+              </div>
+            </Col>
+            <Col className="text-end">2 of 2</Col>
+          </Row>
+        </div>
 
-      
+        {/* Preferred Skills */}
+        <div className="d-flex flex-wrap gap-2 mb-4">
+          <strong>Preferred Skills:</strong>
+          <Badge bg="warning">Apis</Badge>
+          <Badge bg="success">Agile</Badge>
+          <Badge bg="primary">Bonus</Badge>
+          <Badge bg="secondary">+9</Badge>
+        </div>
 
-      <div className="d-flex flex-wrap gap-2 mb-4">
-      
-        <strong>Preferred Skills:</strong>
-        <Badge bg="warning">Apis</Badge>
-        <Badge bg="success">Agile</Badge>
-        <Badge bg="primary">Bonus</Badge>
-        <Badge bg="secondary">+9</Badge>
-      </div>
+        {/* Search Input */}
+        <Form.Control
+          className="mb-3 w-25"
+          type="search"
+          placeholder="Search job title or skills"
+        />
 
-      <Form.Control
-        className="mb-3 w-25"
-        type="search"
-        placeholder="Search job title or skills"
-      />
-
-      <Table bordered hover responsive>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Matched Skills</th>
-            <th>Relevant Exp.</th>
-          </tr>
-        </thead>
-        <tbody>
-          {candidates.map((candidate, index) => (
-            <tr key={index}>
-              <td>
-                <Form.Check type="checkbox" />
-              </td>
-              <td>{candidate.name}</td>
-              <td>
-                <div>{candidate.matched}</div>
-                <div className="d-flex flex-wrap gap-1 mt-1">
-                  {candidate.skills.map((skill, i) => (
-                    <Badge key={i} bg="light" text="dark" className="border">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </td>
-              <td>{candidate.experience}</td>
+        {/* Candidates Table */}
+        <Table bordered hover responsive>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Name</th>
+              <th>Matched Skills</th>
+              <th>Relevant Exp.</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {candidates.map((candidate, index) => (
+              <tr key={index}>
+                <td>
+                  <Form.Check type="checkbox" />
+                </td>
+                <td>{candidate.name}</td>
+                <td>
+                  <div>{candidate.matched}</div>
+                  <div className="d-flex flex-wrap gap-1 mt-1">
+                    {candidate.skills.map((skill, i) => (
+                      <Badge key={i} bg="light" text="dark" className="border">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </td>
+                <td>{candidate.experience}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
 
-      <Pagination className="justify-content-end">
-        <Pagination.Prev />
-        <Pagination.Item active>{1}</Pagination.Item>
-        <Pagination.Next />
-      </Pagination>
-    </Container>
+        {/* Pagination */}
+        <Pagination className="justify-content-end">
+          <Pagination.Prev />
+          <Pagination.Item active>{1}</Pagination.Item>
+          <Pagination.Next />
+        </Pagination>
+      </Container>
     </>
   );
 };
