@@ -19,7 +19,7 @@ const candidates = [
     skills: ["Jest", "React", "Agile", "+5"],
     experience: "9/4",
     email: "marco.silva@example.com",
-    phone: "+1-555-123-4567"
+    phone: "+1-555-123-4567",
   },
   {
     name: "Rajat Mehra",
@@ -27,7 +27,7 @@ const candidates = [
     skills: ["Stack", "Redux", "React", "+3"],
     experience: "4/4",
     email: "rajat.mehra@example.com",
-    phone: "+91-98765-43210"
+    phone: "+91-98765-43210",
   },
   {
     name: "Tomáš Novák",
@@ -35,7 +35,7 @@ const candidates = [
     skills: ["Jest", "Apis", "Redux", "+4"],
     experience: "4/4",
     email: "tomas.novak@example.com",
-    phone: "+420-777-888-999"
+    phone: "+420-777-888-999",
   },
   {
     name: "Priya Desai",
@@ -43,7 +43,7 @@ const candidates = [
     skills: ["Jest", "Redux", "React", "+6"],
     experience: "3/4",
     email: "priya.desai@example.com",
-    phone: "+91-91234-56789"
+    phone: "+91-91234-56789",
   },
   {
     name: "María Fernanda Ruiz",
@@ -51,7 +51,7 @@ const candidates = [
     skills: ["Aria", "React", "Github", "+1"],
     experience: "3/4",
     email: "maria.ruiz@example.com",
-    phone: "+52-123-456-7890"
+    phone: "+52-123-456-7890",
   },
   {
     name: "Fatima Al",
@@ -59,7 +59,7 @@ const candidates = [
     skills: ["Figma"],
     experience: "0/4",
     email: "fatima.al@example.com",
-    phone: "+971-50-123-4567"
+    phone: "+971-50-123-4567",
   },
   {
     name: "Amirthavarshini L",
@@ -67,10 +67,9 @@ const candidates = [
     skills: ["No skills"],
     experience: "0/4",
     email: "amirtha.l@example.com",
-    phone: "+91-90000-00000"
-  }
+    phone: "+91-90000-00000",
+  },
 ];
-
 
 const Page = () => {
   return (
@@ -143,7 +142,9 @@ const Page = () => {
           <tbody>
             {candidates.map((candidate, index) => (
               <tr key={index}>
-                <td><Form.Check type="checkbox" /></td>
+                <td>
+                  <Form.Check type="checkbox" />
+                </td>
                 <td>{candidate.name}</td>
                 <td>
                   <div>{candidate.matched}</div>
@@ -167,23 +168,24 @@ const Page = () => {
         <Pagination className="justify-content-center">
           <Pagination.Prev />
           <Pagination.Item active>{1}</Pagination.Item>
-          <Pagination.Item >{2}</Pagination.Item>
-          <Pagination.Item >{3}</Pagination.Item>
+          <Pagination.Item>{2}</Pagination.Item>
+          <Pagination.Item>{3}</Pagination.Item>
           <Pagination.Next />
         </Pagination>
 
-
-        <Row>
-        <Col>1 of 3</Col>
-        <Col>2 of 3</Col>
-        <Col>3 of 3</Col>
-      </Row>
-
-            <Button variant="outline-primary">Primary</Button>
-
+        {/* Download BTN */}
+        <Row className="justify-content-md-center mt-5">
+          <Col xs lg="2">
+            <Button variant="outline-primary">Excel Download</Button>
+          </Col>
+          <Col xs lg="1">
+            <Button variant="outline-primary">Email</Button>
+          </Col>
+          <Col xs lg="2">
+            <Button variant="outline-primary">CSV Download</Button>
+          </Col>
+        </Row>
       </Container>
-
-      
     </>
   );
 };
