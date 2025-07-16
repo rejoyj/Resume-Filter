@@ -15,18 +15,22 @@ const Homepage = () => {
   return (
     <>
       {/* Header */}
-     
-
-      {/* Main Content */}
-      <Container className="form-container">
-       
+      <Container fluid>
+      <Navbar expand="lg" className="navbar-custom shadow-sm">
+        <Container>
+          <Navbar.Brand href="/" className="brand-text">
             <img
               src={logo}
               alt="Manvian logo"
               height="40"
               className="d-inline-block align-top"
             />
-        
+          </Navbar.Brand>
+        </Container>
+      </Navbar>
+
+      {/* Main Content */}
+      <Container className="form-container">
         {/* Upload Button */}
         <div className="text-center mb-3">
           <Button className="upload-btn">Upload</Button>
@@ -88,6 +92,7 @@ const Homepage = () => {
           <Button className="submit-btn">Submit</Button>
         </div>
       </Container>
+        </Container>
     </>
   );
 };
