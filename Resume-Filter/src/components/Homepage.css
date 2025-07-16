@@ -1,0 +1,88 @@
+/* Header/Navbar */
+.navbar-custom {
+  background-color: #5d3fd3; /* Purple */
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+.brand-text {
+  font-weight: bold;
+  color: white;
+  font-size: 24px;
+}
+
+/* Form Container */
+.form-container {
+  background: #fff8f0;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 30px;
+}
+
+/* Upload Button */
+.upload-btn {
+  background-color: #00796b;
+  color: #ffffff;
+  border-radius: 30px;
+  padding: 10px 30px;
+  font-weight: 500;
+  font-size: 16px;
+  border: none;
+}
+
+.upload-btn:hover {
+  background-color: #004d40;
+}
+
+/* Job Title Dropdown */
+.dropdown-job {
+   background-color: #5d3fd3;
+  color: white;
+  border-radius: 25px;
+  padding: 10px 20px;
+  border: none;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.dropdown-job::after {
+  color: white;
+}
+
+/* Skills Dropdown */
+.dropdown-skills {
+  background-color: #5d3fd3;
+  color: white;
+  border-radius: 20px;
+  border: none;
+  font-weight: 500;
+}
+
+.dropdown-skills::after {
+  color: white;
+}
+
+/* Description Textarea */
+.textarea-custom {
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-size: 14px;
+}
+
+/* Submit Button */
+.submit-btn {
+  background-color: #00796b;
+  color: #ffffff;
+  border-radius: 30px;
+  padding: 10px 40px;
+  font-size: 16px;
+  border: none;
+  font-weight: 500;
+}
+
+.submit-btn:hover {
+  background-color: #004d40;
+}
