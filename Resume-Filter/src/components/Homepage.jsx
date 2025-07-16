@@ -10,6 +10,7 @@ import {
 } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
+import { Link } from 'react-router-dom';
 
 const Homepage = () => {
   return (
@@ -89,7 +90,8 @@ const Homepage = () => {
 
         {/* Submit Button */}
         <div className="text-center">
-          <Button className="submit-btn">Submit</Button>
+          <Link to='/Page'><Button className="submit-btn">Submit</Button></Link>
+          
         </div>
       </Container>
         </Container>

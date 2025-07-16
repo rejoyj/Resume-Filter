@@ -14,11 +14,11 @@ const SideBar = () => {
       style={{ width: '80px' }}>
      
 
-      <Nav.Link  className="py-3 border-bottom" title="Home">
+      <Nav.Link href="/"  className="py-3 border-bottom" title="Home">
         <AiFillHome size={40} />
       </Nav.Link>
 
-        <Nav.Link  className="py-3 border-bottom" title="Results">
+        <Nav.Link  href="/page" className="py-3 border-bottom" title="Results">
        <TbTableShare size={40} />
       </Nav.Link>
 
