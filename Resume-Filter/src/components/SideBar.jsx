@@ -22,7 +22,7 @@ const SideBar = () => {
        <TbTableShare size={40} />
       </Nav.Link>
 
-    <Nav.Link  className="py-3 border-bottom" title="Email">
+    <Nav.Link  href='/mail-template' className="py-3 border-bottom" title="Email">
       <MdEmail size={40} />
       </Nav.Link>
 

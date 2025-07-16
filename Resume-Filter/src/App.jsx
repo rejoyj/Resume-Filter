@@ -5,6 +5,7 @@ import './App.css';
 import Page from './components/Page.jsx';
 import SideBar from './components/SideBar.jsx';
 import Homepage from './components/Homepage.jsx';
+import MailTemplatePage from './components/MailTemplatePage.jsx';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -20,6 +21,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/page" element={<Page />} />
+            <Route path="/mail-template" element={<MailTemplatePage />} />
           </Routes>
         </div>
       </div>
