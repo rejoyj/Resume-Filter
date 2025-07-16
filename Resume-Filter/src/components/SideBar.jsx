@@ -1,7 +1,9 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { FaBriefcase, FaUserCircle } from "react-icons/fa";
-import { RiFolderUserFill } from "react-icons/ri";
+import { AiFillHome } from "react-icons/ai";
+import { TbTableShare } from "react-icons/tb";
+import { MdEmail } from "react-icons/md";
 
 
 const SideBar = () => {
@@ -9,19 +11,19 @@ const SideBar = () => {
   
      <Nav
       className="flex-column align-items-center bg-light border-end vh-100"
-      style={{ width: '60px' }}>
+      style={{ width: '80px' }}>
      
 
-      <Nav.Link  className="py-3 border-bottom" title="Jobs">
-        <FaBriefcase size={20}/>
+      <Nav.Link  className="py-3 border-bottom" title="Home">
+        <AiFillHome size={40} />
       </Nav.Link>
 
-        <Nav.Link  className="py-3 border-bottom" title="Candidates">
-       <RiFolderUserFill size={20} />
+        <Nav.Link  className="py-3 border-bottom" title="Results">
+       <TbTableShare size={40} />
       </Nav.Link>
 
-    <Nav.Link  className="py-3 border-bottom" title="Candidates">
-      <FaUserCircle />
+    <Nav.Link  className="py-3 border-bottom" title="Email">
+      <MdEmail size={40} />
       </Nav.Link>
 
     </Nav>

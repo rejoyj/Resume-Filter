@@ -18,44 +18,59 @@ const candidates = [
     matched: "8/21",
     skills: ["Jest", "React", "Agile", "+5"],
     experience: "9/4",
+    email: "marco.silva@example.com",
+    phone: "+1-555-123-4567"
   },
   {
     name: "Rajat Mehra",
     matched: "6/21",
     skills: ["Stack", "Redux", "React", "+3"],
     experience: "4/4",
+    email: "rajat.mehra@example.com",
+    phone: "+91-98765-43210"
   },
   {
     name: "Tomáš Novák",
     matched: "7/21",
     skills: ["Jest", "Apis", "Redux", "+4"],
     experience: "4/4",
+    email: "tomas.novak@example.com",
+    phone: "+420-777-888-999"
   },
   {
     name: "Priya Desai",
     matched: "9/21",
     skills: ["Jest", "Redux", "React", "+6"],
     experience: "3/4",
+    email: "priya.desai@example.com",
+    phone: "+91-91234-56789"
   },
   {
     name: "María Fernanda Ruiz",
     matched: "4/21",
     skills: ["Aria", "React", "Github", "+1"],
     experience: "3/4",
+    email: "maria.ruiz@example.com",
+    phone: "+52-123-456-7890"
   },
   {
     name: "Fatima Al",
     matched: "1/21",
     skills: ["Figma"],
     experience: "0/4",
+    email: "fatima.al@example.com",
+    phone: "+971-50-123-4567"
   },
   {
     name: "Amirthavarshini L",
     matched: "0/21",
     skills: ["No skills"],
     experience: "0/4",
-  },
+    email: "amirtha.l@example.com",
+    phone: "+91-90000-00000"
+  }
 ];
+
 
 const Page = () => {
   return (
@@ -140,7 +155,8 @@ const Page = () => {
                     ))}
                   </div>
                 </td>
-                <td>{candidate.experience}</td>
+                <td>{candidate.email}</td>
+                <td>{candidate.phone}</td>
                 <td>{candidate.experience}</td>
               </tr>
             ))}
@@ -155,7 +171,19 @@ const Page = () => {
           <Pagination.Item >{3}</Pagination.Item>
           <Pagination.Next />
         </Pagination>
+
+
+        <Row>
+        <Col>1 of 3</Col>
+        <Col>2 of 3</Col>
+        <Col>3 of 3</Col>
+      </Row>
+
+            <Button variant="outline-primary">Primary</Button>
+
       </Container>
+
+      
     </>
   );
 };
