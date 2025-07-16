@@ -61,13 +61,9 @@ const Page = () => {
   return (
     <>
       <Container fluid className="page-container">
-        <h4 className="mb-3">
-          Jobs &gt; <strong>Frontend Engineer</strong>
-        </h4>
-
         {/* Breadcrumb */}
         <div className="header-container mb-4">
-          <Row className="breadcrumb-section">
+          <Row className="breadcrumb-section ">
             <nav aria-label="breadcrumb">
               <ol className="breadcrumb breadcrumb-custom mb-0">
                 <li className="breadcrumb-item">
@@ -75,7 +71,10 @@ const Page = () => {
                     Jobs
                   </a>
                 </li>
-                <li className="breadcrumb-item active fw-bold" aria-current="page">
+                <li
+                  className="breadcrumb-item active fw-bold"
+                  aria-current="page"
+                >
                   Frontend Engineer
                 </li>
               </ol>
@@ -87,23 +86,24 @@ const Page = () => {
             <Col>
               <div className="d-flex flex-wrap gap-2 mb-2">
                 <strong>Mandatory Skills:</strong>
-                <Badge bg="warning" text="dark">Jest</Badge>
+                <Badge bg="warning" text="dark">
+                  Jest
+                </Badge>
                 <Badge bg="success">Aria</Badge>
                 <Badge bg="primary">React</Badge>
                 <Badge bg="secondary">+6</Badge>
               </div>
             </Col>
-            <Col className="text-end">2 of 2</Col>
+            <Col className="text-end">
+              <div className="d-flex flex-wrap gap-2 mb-4">
+                <strong>Preferred Skills:</strong>
+                <Badge bg="warning">Apis</Badge>
+                <Badge bg="success">Agile</Badge>
+                <Badge bg="primary">Bonus</Badge>
+                <Badge bg="secondary">+9</Badge>
+              </div>
+            </Col>
           </Row>
-        </div>
-
-        {/* Preferred Skills */}
-        <div className="d-flex flex-wrap gap-2 mb-4">
-          <strong>Preferred Skills:</strong>
-          <Badge bg="warning">Apis</Badge>
-          <Badge bg="success">Agile</Badge>
-          <Badge bg="primary">Bonus</Badge>
-          <Badge bg="secondary">+9</Badge>
         </div>
 
         {/* Search Input */}
@@ -120,15 +120,15 @@ const Page = () => {
               <th></th>
               <th>Name</th>
               <th>Matched Skills</th>
-              <th>Relevant Exp.</th>
+              <th>Email</th>
+              <th>Phone Number</th>
+              <th>Experience</th>
             </tr>
           </thead>
           <tbody>
             {candidates.map((candidate, index) => (
               <tr key={index}>
-                <td>
-                  <Form.Check type="checkbox" />
-                </td>
+                <td><Form.Check type="checkbox" /></td>
                 <td>{candidate.name}</td>
                 <td>
                   <div>{candidate.matched}</div>
@@ -141,15 +141,18 @@ const Page = () => {
                   </div>
                 </td>
                 <td>{candidate.experience}</td>
+                <td>{candidate.experience}</td>
               </tr>
             ))}
           </tbody>
         </Table>
 
         {/* Pagination */}
-        <Pagination className="justify-content-end">
+        <Pagination className="justify-content-center">
           <Pagination.Prev />
           <Pagination.Item active>{1}</Pagination.Item>
+          <Pagination.Item >{2}</Pagination.Item>
+          <Pagination.Item >{3}</Pagination.Item>
           <Pagination.Next />
         </Pagination>
       </Container>
