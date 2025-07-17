@@ -17,7 +17,7 @@ function App() {
         <SideBar />
 
         {/* Page content based on routing */}
-        <div className="flex-grow-1 p-3">
+        <div className="flex-grow-1 p-0">
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/page" element={<Page />} />

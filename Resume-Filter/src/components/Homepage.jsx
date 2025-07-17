@@ -37,7 +37,7 @@ const Homepage = () => {
   return (
     <>
       {/* Header */}
-      <Container fluid>
+      <Container fluid className="p-0">
         <Navbar expand="lg" className="navbar-custom shadow-sm">
           <Container>
             <Navbar.Brand href="/" className="brand-text">
