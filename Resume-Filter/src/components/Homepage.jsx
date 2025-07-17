@@ -13,6 +13,7 @@ import {
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 import { Link } from 'react-router-dom';
+import { FaUpload } from "react-icons/fa6";
 
 const Homepage = () => {
   // 1️⃣  reference to the hidden file input
@@ -65,6 +66,7 @@ const Homepage = () => {
           {/* Upload Button */}
           <div className="text-center mb-3">
             <Button className="upload-btn" onClick={handleUploadClick}>
+              <FaUpload style={{ marginRight: "8px" }} />
               Upload
             </Button>
           </div>

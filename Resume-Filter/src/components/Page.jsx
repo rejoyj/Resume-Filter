@@ -12,6 +12,8 @@ import {
 } from "react-bootstrap";
 import "./Page.css";
 import { Link } from 'react-router-dom';
+import { FaDownload } from "react-icons/fa6";
+import { FaRegShareFromSquare } from "react-icons/fa6";
 
 const candidates = [
   {
@@ -509,15 +511,15 @@ const Page = () => {
         {/* Download BTN */}
         <Row className="justify-content-md-center mt-5">
           <Col xs lg="2">
-            <Button variant="outline-primary">Excel Download</Button>
+            <Button variant="outline-primary">Excel Download <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} /></Button>
           </Col>
           <Col xs lg="1">
           <Link to="/mail-template">
-            <Button variant="outline-primary">Email</Button>
+            <Button variant="outline-primary"> <FaRegShareFromSquare style={{ marginRight: "8px", marginBottom: "5px" }} />Email</Button>
           </Link>
           </Col>
           <Col xs lg="2">
-            <Button variant="outline-primary">CSV Download</Button>
+            <Button variant="outline-primary">CSV Download <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} /></Button>
           </Col>
         </Row>
       </Container>
