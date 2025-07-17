@@ -16,29 +16,29 @@ import { Link } from 'react-router-dom';
 import { FaUpload } from "react-icons/fa6";
 
 const Homepage = () => {
-  // 1️⃣  reference to the hidden file input
+  
   const fileInputRef = useRef(null);
 
-  // 2️⃣  fires when the user chooses a file
+ 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length) {
-      // do whatever you need with the chosen files
+     
       console.log("Selected files:", files);
-      // e.g. upload to server, preview, set state, etc.
+     
     }
   };
 
-  // 3️⃣  fires when the Upload button is clicked
+
   const handleUploadClick = () => {
-    // trigger the native file‑picker
+    
     if (fileInputRef.current) fileInputRef.current.click();
   };
 
   return (
     <>
-      {/* Header */}
-      <Container fluid className="p-0">
+     
+      <Container fluid className="home-container p-0">
         <Navbar expand="lg" className="navbar-custom shadow-sm">
           <Container>
             <Navbar.Brand href="/" className="brand-text">
@@ -52,18 +52,20 @@ const Homepage = () => {
           </Container>
         </Navbar>
 
-        {/* Main Content */}
         <Container className="form-container">
-          {/* ⬇️ Hidden file input */}
+        
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             style={{ display: "none" }}
-            multiple   /* optional – remove if you want a single file */
+            multiple   
           />
+          <Container className="form-wrapper">
+ 
+</Container>
 
-          {/* Upload Button */}
+         
           <div className="text-center mb-3">
             <Button className="upload-btn" onClick={handleUploadClick}>
               <FaUpload style={{ marginRight: "8px" }} />
@@ -83,7 +85,7 @@ const Homepage = () => {
           </Dropdown.Menu>
         </Dropdown>
 
-        {/* Skills Dropdowns */}
+       
         <Row className="mb-3">
           <Col>
             <Dropdown>
@@ -111,7 +113,7 @@ const Homepage = () => {
           </Col>
         </Row>
 
-        {/* Description */}
+       
         <Form.Group className="mb-3">
           <Form.Control
             as="textarea"
@@ -121,7 +123,7 @@ const Homepage = () => {
           />
         </Form.Group>
 
-        {/* Submit Button */}
+       
         <div className="text-center">
           <Link to='/Page'><Button className="submit-btn">Submit</Button></Link>
           
