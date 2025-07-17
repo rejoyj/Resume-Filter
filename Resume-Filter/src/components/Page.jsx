@@ -11,6 +11,7 @@ import {
   Pagination,
 } from "react-bootstrap";
 import "./Page.css";
+import { Link } from 'react-router-dom';
 
 const candidates = [
   {
@@ -511,7 +512,9 @@ const Page = () => {
             <Button variant="outline-primary">Excel Download</Button>
           </Col>
           <Col xs lg="1">
+          <Link to="/mail-template">
             <Button variant="outline-primary">Email</Button>
+          </Link>
           </Col>
           <Col xs lg="2">
             <Button variant="outline-primary">CSV Download</Button>
