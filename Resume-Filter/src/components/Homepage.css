@@ -6,12 +6,16 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.7;
 }
-
+.home-row{
+  padding: 0;
+  margin: 0;
+}
 
 .home-container {
   background: linear-gradient(90deg, #00d2ff 0%, #3a47d5 100%);
   min-height: 100vh;
   padding: 0;
+
 }
 
 .brand-text {
@@ -26,10 +30,10 @@
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
   max-width: 550px;
-  margin: 120px 40px 40px 800px;
   padding: 10px;
   opacity: 0.75;
   height: 50vh;
+  margin-top: 100px;
 }
 
 

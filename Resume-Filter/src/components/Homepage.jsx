@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Navbar, Container, Button } from "react-bootstrap";
+import { Navbar, Container, Button ,Row , Col } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 import { FaUpload } from "react-icons/fa6";
@@ -34,8 +34,6 @@ const Homepage = () => {
 
   const handleDragOver = (e) => e.preventDefault();
 
-  
-
   return (
     <>
       <Container fluid className="home-container p-0">
@@ -51,8 +49,12 @@ const Homepage = () => {
             </Navbar.Brand>
           </Container>
         </Navbar>
-
-        <Container className="form-container text-center p-3">
+        <Row className="home-row">
+          <Col>
+          
+          </Col>
+          <Col>
+          <Container className="form-container text-center p-3">
           {/* Hidden file input */}
           <input
             type="file"
@@ -105,21 +107,18 @@ const Homepage = () => {
             </div>
           )}
 
-         
           <div className="mb-3">
             <Link to="/Page">
-              <Button
-                className="process-btn mt-4"
-              >
-                Process Resume
-              </Button>
+              <Button className="process-btn mt-4">Process Resume</Button>
             </Link>
           </div>
         </Container>
+          </Col>
+        </Row>
+        
       </Container>
     </>
   );
 };
 
 export default Homepage;
-
