@@ -53,8 +53,16 @@ const Homepage = () => {
         <Row className="home-row">
           <Col>
           <Row>
-            <Col className="text-center align-self-center">
+            <Col className="text-center align-self-center pt-5">
             <img src={home} alt="Home" style={{height:"400px"}} />
+            </Col>
+          </Row>
+          <Row>
+            <Col className="text-center">
+              <h1 className="home-title">Hire <span >Smart</span>. Hire <span>Skilled</span>. Hire <span>Success</span>.</h1>
+              <p className="home-subtitle">
+                Upload your resume and let us filter it for you.
+              </p>
             </Col>
           </Row>
           </Col>
