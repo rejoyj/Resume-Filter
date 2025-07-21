@@ -52,7 +52,7 @@ const Homepage = () => {
           </Container>
         </Navbar>
 
-        <Container className="form-container text-center mt-5">
+        <Container className="form-container text-center p-3">
           {/* Hidden file input */}
           <input
             type="file"

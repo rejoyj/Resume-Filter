@@ -1,6 +1,7 @@
 
 .navbar-custom {
-  background: linear-gradient(to right, #000000, #0d0d0d);
+  
+  background: linear-gradient(90deg, #efd5ff 0%, #515ada 100%);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.7;
@@ -8,7 +9,7 @@
 
 
 .home-container {
-  background: linear-gradient(to bottom, #43C6FF, #000000, #43C6FF);
+  background: linear-gradient(90deg, #00d2ff 0%, #3a47d5 100%);
   min-height: 100vh;
   padding: 0;
 }
@@ -21,13 +22,14 @@
 
 
 .form-container {
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  background: white;
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  max-width: 450px;
-  margin: 40px auto;
-  padding: 30px;
+  max-width: 550px;
+  margin: 120px 40px 40px 800px;
+  padding: 10px;
   opacity: 0.75;
+  height: 50vh;
 }
 
 
