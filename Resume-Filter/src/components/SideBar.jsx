@@ -30,7 +30,7 @@ const SideBar = () => {
     <FaFile size={40}/>
   </Nav.Link>
 
-  <Nav.Link href="/" className="py-3 border-bottom" title="Email">
+  <Nav.Link href="" className="py-3 border-bottom" title="Chatbot">
   <FaMessage size={40}/>
   </Nav.Link>
 

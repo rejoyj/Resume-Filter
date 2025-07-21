@@ -80,7 +80,7 @@ const JobDescription = () => {
       
 
      
-      <Container className="form-container text-center ">
+      <Container className="job-form-container text-center ">
 
     
    
