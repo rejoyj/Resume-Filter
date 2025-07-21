@@ -1,0 +1,61 @@
+.navbar-custom {
+  background: linear-gradient(to right, #000000, #0d0d0d);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0.7;
+}
+
+.form-container {
+  background: linear-gradient(to bottom, #43C6FF, #000000, #43C6FF);
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+h5 {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  margin-bottom: 0;
+}
+
+.dropdown-toggle {
+  width: 100%;
+  text-align: left;
+}
+
+.badge {
+  font-size: 0.9rem;
+  padding: 0.6em 0.9em;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.badge:hover {
+  transform: scale(1.05);
+  background-color: #0a58ca !important;
+  color: #fff;
+}
+
+textarea.form-control {
+  resize: none;
+  padding: 15px;
+  font-size: 1rem;
+}
+
+button[type="submit"] {
+  font-weight: bold;
+  letter-spacing: 1px;
+  transition: background-color 0.3s ease-in-out;
+}
+
+button[type="submit"]:hover {
+  background-color: #0a58ca;
+  color: white;
+}

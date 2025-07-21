@@ -1,6 +1,7 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
-import { FaBriefcase, FaUserCircle } from "react-icons/fa";
+import { FaBriefcase, FaUserCircle , FaFile} from "react-icons/fa";
+import { FaMessage } from "react-icons/fa6";
 import { AiFillHome } from "react-icons/ai";
 import { TbTableShare } from "react-icons/tb";
 import { MdEmail } from "react-icons/md";
@@ -24,6 +25,16 @@ const SideBar = () => {
   <Nav.Link href="/mail-template" className="py-3 border-bottom" title="Email">
     <MdEmail size={40} />
   </Nav.Link>
+
+  <Nav.Link href="/jobdescription" className="py-3 border-bottom" title="Email">
+    <FaFile size={40}/>
+  </Nav.Link>
+
+  <Nav.Link href="/" className="py-3 border-bottom" title="Email">
+  <FaMessage size={40}/>
+  </Nav.Link>
+
+
 </Nav>
 
   )

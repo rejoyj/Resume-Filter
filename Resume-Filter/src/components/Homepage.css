@@ -3,7 +3,7 @@
   background: linear-gradient(to right, #000000, #0d0d0d);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  opacity: .7;
+  opacity: 0.7;
 }
 
 
@@ -45,6 +45,17 @@
   cursor: pointer;
 }
 
+.process-btn{
+   background-color: transparent;
+  color: #000000;
+  border: 2px solid #000000;
+  border-radius: 30px;
+  padding: 10px 30px;
+  font-weight: 500;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
 .upload-btn:hover {
   background-color: #43C6FF;
 }

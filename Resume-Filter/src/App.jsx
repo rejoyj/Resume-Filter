@@ -8,6 +8,7 @@ import Homepage from './components/Homepage.jsx';
 import MailTemplatePage from './components/MailTemplatePage.jsx';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import JobDescription from './components/JobDescription.jsx';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<Homepage />} />
             <Route path="/page" element={<Page />} />
             <Route path="/mail-template" element={<MailTemplatePage />} />
+            <Route path='/jobdescription' element={<JobDescription />} />
           </Routes>
         </div>
       </div>
