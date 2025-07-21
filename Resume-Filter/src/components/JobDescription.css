@@ -1,4 +1,10 @@
-
+.navbar-custom {
+  width: 100%;
+  background: linear-gradient(90deg, #1CB5E0 0%, #000851 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0.7;
+}
 
 .job-form-container {
   background: linear-gradient(to bottom, #43C6FF, #000000, #43C6FF);

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Navbar, Container, Button ,Row , Col } from "react-bootstrap";
+import { Navbar, Container, Button, Row, Col } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 import { FaUpload } from "react-icons/fa6";
@@ -52,83 +52,82 @@ const Homepage = () => {
         </Navbar>
         <Row className="home-row">
           <Col>
-          <Row>
-            <Col className="text-center align-self-center pt-5">
-            <img src={home} alt="Home" style={{height:"400px"}} />
-            </Col>
-          </Row>
-          <Row>
-            <Col className="text-center">
-              <h1 className="home-title">Hire <span >Smart</span>. Hire <span>Skilled</span>. Hire <span>Success</span>.</h1>
-              <p className="home-subtitle">
-                Upload your resume and let us filter it for you.
-              </p>
-            </Col>
-          </Row>
+            <Row>
+              <Col className="text-center align-self-center pt-5">
+                <img src={home} alt="Home" style={{ height: "400px" }} />
+              </Col>
+            </Row>
+            <Row>
+              <Col className="text-center">
+                <h1 className="home-title">
+                  Hire <span>Smart</span>. Hire <span>Skilled</span>. Hire{" "}
+                  <span>Success</span>.
+                </h1>
+                <p className="home-subtitle">
+                  Upload your resume and let us filter it for you.
+                </p>
+              </Col>
+            </Row>
           </Col>
           <Col>
-        <Container
-  className="form-container text-center p-5 shadow"
-  onDrop={handleDrop}
-  onDragOver={handleDragOver}
->
-  {/* Hidden File Input */}
-  <input
-    type="file"
-    ref={fileInputRef}
-    onChange={handleFileChange}
-    style={{ display: "none" }}
-    accept=".pdf"
-  />
+            <Container
+              className="form-container text-center p-5 shadow"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              {/* Hidden File Input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+                accept=".pdf"
+              />
 
-  {/* Upload Button */}
-  <Button className="mt-5"
-    onClick={handleUploadClick}
-    style={{
-      backgroundColor: "#0d6efd",
-      border: "none",
-      padding: "10px 30px",
-      borderRadius: "30px",
-      fontSize: "16px",
-      fontWeight: "500",
-    }}
-  >
-    Upload Image
-  </Button>
+              {/* Upload Button */}
+              <Button
+                className="mt-5"
+                onClick={handleUploadClick}
+                style={{
+                  backgroundColor: "#0d6efd",
+                  border: "none",
+                  padding: "10px 30px",
+                  borderRadius: "30px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                }}
+              >
+                Upload Image
+              </Button>
 
-  {/* Drag/drop or paste instructions */}
-  <p className="text-muted mt-4 mb-1" style={{ fontWeight: 500 }}>
-    or drop a file,
-  </p>
- 
+              {/* Drag/drop or paste instructions */}
+              <p className="text-muted mt-4 mb-1" style={{ fontWeight: 500 }}>
+                or drop a file,
+              </p>
 
-  {/* Show selected file */}
-  {file && (
-    <div className="mt-3 text-primary fw-bold">
-      Selected File: {file.name}
-    </div>
-  )}
+              {/* Show selected file */}
+              {file && (
+                <div className="mt-3 text-primary fw-bold">
+                  Selected File: {file.name}
+                </div>
+              )}
 
-  {/* Process Button */}
-  
-</Container>
-<div
-  className="mb-3"
-  style={{
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  }}
->
-  <Link to="/Page">
-    <Button className="process-btn mt-3">Process Resume</Button>
-  </Link>
-</div>
-
-
+              {/* Process Button */}
+            </Container>
+            <div
+              className="mb-3"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Link to="/Page">
+                <Button className="process-btn mt-3">Process Resume</Button>
+              </Link>
+            </div>
           </Col>
         </Row>
-        
       </Container>
     </>
   );

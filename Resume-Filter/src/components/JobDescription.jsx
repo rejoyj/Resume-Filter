@@ -8,8 +8,10 @@ import {
   Badge,
   Card,
   InputGroup,
+  Navbar 
 } from "react-bootstrap";
 import "./JobDescription.css";
+import logo from "../assets/1.-Manvian-Logo-06.png";
 
 const JobDescription = () => {
   const [mandatorySkills, setMandatorySkills] = useState([]);
@@ -66,7 +68,22 @@ const JobDescription = () => {
   };
 
   return (
+    <>
+    <Navbar expand="lg" className="navbar-custom shadow-sm">
+                    <Container>
+                      <Navbar.Brand href="/" className="brand-text">
+                        <img
+                          src={logo}
+                          alt="Manvian logo"
+                          height="40"
+                          className="d-inline-block align-top"
+                        />
+                      </Navbar.Brand>
+                    </Container>
+                  </Navbar>
+   
     <Container className="py-5">
+       
       <Card className="shadow-lg border-0 p-4 bg-light">
         <h4 className="text-center text-primary mb-4">Add Job Description</h4>
         <Form onSubmit={handleSubmit}>
@@ -207,6 +224,7 @@ const JobDescription = () => {
         </Form>
       </Card>
     </Container>
+     </>
   );
 };
 

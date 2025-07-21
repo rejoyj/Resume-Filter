@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Navbar,
   Container,
   Table,
   Badge,
@@ -11,10 +12,10 @@ import {
   Pagination,
 } from "react-bootstrap";
 import "./Page.css";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import { FaDownload } from "react-icons/fa6";
 import { FaRegShareFromSquare } from "react-icons/fa6";
-
+import logo from "../assets/1.-Manvian-Logo-06.png";
 const candidates = [
   {
     name: "Marco Silva",
@@ -397,6 +398,18 @@ const Page = () => {
   const totalPages = Math.ceil(candidates.length / itemsPerPage);
   return (
     <>
+      <Navbar expand="lg" className="navbar-custom shadow-sm">
+        <Container>
+          <Navbar.Brand href="/" className="brand-text">
+            <img
+              src={logo}
+              alt="Manvian logo"
+              height="40"
+              className="d-inline-block align-top"
+            />
+          </Navbar.Brand>
+        </Container>
+      </Navbar>
       <Container fluid className="page-container">
         {/* Breadcrumb */}
         <div className="header-container mb-4">
@@ -511,15 +524,27 @@ const Page = () => {
         {/* Download BTN */}
         <Row className="justify-content-md-center mt-5">
           <Col xs lg="2">
-            <Button variant="outline-primary">Excel Download <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} /></Button>
+            <Button variant="outline-primary">
+              Excel Download{" "}
+              <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} />
+            </Button>
           </Col>
           <Col xs lg="1">
-          <Link to="/mail-template">
-            <Button variant="outline-primary"> <FaRegShareFromSquare style={{ marginRight: "8px", marginBottom: "5px" }} />Email</Button>
-          </Link>
+            <Link to="/mail-template">
+              <Button variant="outline-primary">
+                {" "}
+                <FaRegShareFromSquare
+                  style={{ marginRight: "8px", marginBottom: "5px" }}
+                />
+                Email
+              </Button>
+            </Link>
           </Col>
           <Col xs lg="2">
-            <Button variant="outline-primary">CSV Download <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} /></Button>
+            <Button variant="outline-primary">
+              CSV Download{" "}
+              <FaDownload style={{ marginRight: "8px", marginBottom: "5px" }} />
+            </Button>
           </Col>
         </Row>
       </Container>

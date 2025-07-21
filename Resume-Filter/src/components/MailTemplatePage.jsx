@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Row, Col, Alert, Badge } from 'react-bootstrap';
+import { Navbar,Form, Button, Container, Row, Col, Alert, Badge } from 'react-bootstrap';
+import logo from "../assets/1.-Manvian-Logo-06.png";
 
 const templates = {
   positive: "Hi [Name],\n\nGreat news! You've been accepted. Welcome aboard!\n\nBest,\nTeam",
@@ -62,6 +63,19 @@ function MailTemplatePage() {
   };
 
   return (
+    <>
+      <Navbar expand="lg" className="navbar-custom shadow-sm">
+                    <Container>
+                      <Navbar.Brand href="/" className="brand-text">
+                        <img
+                          src={logo}
+                          alt="Manvian logo"
+                          height="40"
+                          className="d-inline-block align-top"
+                        />
+                      </Navbar.Brand>
+                    </Container>
+                  </Navbar>
     <Container className="mt-5">
       <Row className="justify-content-center">
         <Col md={8}>
@@ -127,6 +141,7 @@ function MailTemplatePage() {
         </Col>
       </Row>
     </Container>
+       </>
   );
 }
 
