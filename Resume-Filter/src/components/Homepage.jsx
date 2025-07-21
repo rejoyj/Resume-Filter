@@ -4,6 +4,7 @@ import { Navbar, Container, Button ,Row , Col } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 import { FaUpload } from "react-icons/fa6";
+import home from "../assets/Home.png";
 
 const Homepage = () => {
   const fileInputRef = useRef(null);
@@ -51,7 +52,11 @@ const Homepage = () => {
         </Navbar>
         <Row className="home-row">
           <Col>
-          
+          <Row>
+            <Col className="text-center align-self-center">
+            <img src={home} alt="Home" style={{height:"400px"}} />
+            </Col>
+          </Row>
           </Col>
           <Col>
           <Container className="form-container text-center p-3">
