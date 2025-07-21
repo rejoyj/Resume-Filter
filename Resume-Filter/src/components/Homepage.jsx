@@ -59,65 +59,65 @@ const Homepage = () => {
           </Row>
           </Col>
           <Col>
-          <Container className="form-container text-center p-3">
-          {/* Hidden file input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-            accept=".pdf"
-          />
+        <Container
+  className="form-container text-center p-5 shadow"
+  onDrop={handleDrop}
+  onDragOver={handleDragOver}
+>
+  {/* Hidden File Input */}
+  <input
+    type="file"
+    ref={fileInputRef}
+    onChange={handleFileChange}
+    style={{ display: "none" }}
+    accept=".pdf"
+  />
 
-          {/* Upload Button */}
-          <div className="mb-3">
-            <Button className="upload-btn" onClick={handleUploadClick}>
-              <FaUpload style={{ marginRight: "8px" }} />
-              Upload
-            </Button>
-          </div>
+  {/* Upload Button */}
+  <Button className="mt-5"
+    onClick={handleUploadClick}
+    style={{
+      backgroundColor: "#0d6efd",
+      border: "none",
+      padding: "10px 30px",
+      borderRadius: "30px",
+      fontSize: "16px",
+      fontWeight: "500",
+    }}
+  >
+    Upload Image
+  </Button>
 
-          {/* Drag and Drop Box */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            style={{
-              borderRadius: "25px",
-              backgroundColor: "#0d6efd",
-              padding: "15px 30px",
-              color: "#fff",
-              fontWeight: "500",
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              maxWidth: "700px",
-              margin: "0 auto",
-            }}
-          >
-            <FaUpload size={22} className="me-2" />
-            <span>Drag and Drop Files here</span>
-          </div>
+  {/* Drag/drop or paste instructions */}
+  <p className="text-muted mt-4 mb-1" style={{ fontWeight: 500 }}>
+    or drop a file,
+  </p>
+ 
 
-          {/* Show file name if uploaded or dropped */}
-          {file && (
-            <div
-              style={{
-                marginTop: "10px",
-                color: "#0d6efd",
-                fontWeight: "bold",
-              }}
-            >
-              Selected File: {file.name}
-            </div>
-          )}
+  {/* Show selected file */}
+  {file && (
+    <div className="mt-3 text-primary fw-bold">
+      Selected File: {file.name}
+    </div>
+  )}
 
-          <div className="mb-3">
-            <Link to="/Page">
-              <Button className="process-btn mt-4">Process Resume</Button>
-            </Link>
-          </div>
-        </Container>
+  {/* Process Button */}
+  
+</Container>
+<div
+  className="mb-3"
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  }}
+>
+  <Link to="/Page">
+    <Button className="process-btn mt-3">Process Resume</Button>
+  </Link>
+</div>
+
+
           </Col>
         </Row>
         
