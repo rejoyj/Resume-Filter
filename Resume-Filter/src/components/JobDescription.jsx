@@ -4,23 +4,12 @@ import {
   Form,
   Row,
   Col,
-  Dropdown,
-  DropdownButton,
   Button,
   Badge,
+  Card,
+  InputGroup,
 } from "react-bootstrap";
 import "./JobDescription.css";
-const skillsList = [
-  "Photoshop",
-  "After Effects",
-  "Indesign",
-  "Blender",
-  "Da Vinci",
-  "Illustrator",
-  "Figma",
-  "Premiere pro",
-  "3DS MAX",
-];
 
 const JobDescription = () => {
   const [mandatorySkills, setMandatorySkills] = useState([]);
@@ -28,13 +17,17 @@ const JobDescription = () => {
   const [jobTitle, setJobTitle] = useState("");
   const [experience, setExperience] = useState("");
   const [description, setDescription] = useState("");
+  const [newMandatorySkill, setNewMandatorySkill] = useState("");
+  const [newPreferredSkill, setNewPreferredSkill] = useState("");
 
-  const handleSkillSelect = (skill, type) => {
-    if (type === "mandatory" && !mandatorySkills.includes(skill)) {
-      setMandatorySkills([...mandatorySkills, skill]);
+  const addSkill = (type) => {
+    if (type === "mandatory" && newMandatorySkill.trim() !== "") {
+      setMandatorySkills([...mandatorySkills, newMandatorySkill.trim()]);
+      setNewMandatorySkill("");
     }
-    if (type === "preferred" && !preferredSkills.includes(skill)) {
-      setPreferredSkills([...preferredSkills, skill]);
+    if (type === "preferred" && newPreferredSkill.trim() !== "") {
+      setPreferredSkills([...preferredSkills, newPreferredSkill.trim()]);
+      setNewPreferredSkill("");
     }
   };
 
@@ -57,18 +50,14 @@ const JobDescription = () => {
       createdAt: new Date().toISOString(),
     };
 
-    // Get existing jobs from localStorage or initialize as empty array
-    const existingJobs = JSON.parse(localStorage.getItem("jobDescriptions")) || [];
+    const existingJobs =
+      JSON.parse(localStorage.getItem("jobDescriptions")) || [];
 
-    // Add new job
     existingJobs.push(jobData);
-
-    // Save back to localStorage
     localStorage.setItem("jobDescriptions", JSON.stringify(existingJobs));
 
     alert("Job Description Saved Successfully!");
 
-    // Clear form
     setJobTitle("");
     setExperience("");
     setMandatorySkills([]);
@@ -77,131 +66,147 @@ const JobDescription = () => {
   };
 
   return (
-      
+    <Container className="py-5">
+      <Card className="shadow-lg border-0 p-4 bg-light">
+        <h4 className="text-center text-primary mb-4">Add Job Description</h4>
+        <Form onSubmit={handleSubmit}>
+          {/* Job Title */}
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3} className="fw-semibold text-end">
+              Job Title
+            </Form.Label>
+            <Col sm={9}>
+              <Form.Control
+                type="text"
+                placeholder="Graphic Designer / Video Editor"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                required
+              />
+            </Col>
+          </Form.Group>
 
-     
-      <Container className="job-form-container text-center ">
+          {/* Experience */}
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3} className="fw-semibold text-end">
+              Experience
+            </Form.Label>
+            <Col sm={9}>
+              <Form.Control
+                type="text"
+                placeholder="e.g. 2+ Years"
+                value={experience}
+                onChange={(e) => setExperience(e.target.value)}
+                required
+              />
+            </Col>
+          </Form.Group>
 
-    
-   
-      <h5 className="text-white text-center">
-        ADD JOB DESCRIPTION
-      </h5>
-
-      <Form onSubmit={handleSubmit} className="mt-4">
-      
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={3} className=" text-white  p-2 text-center">
-            JOB TITLE
-          </Form.Label>
-          <Col sm={9}>
-            <Form.Control
-              type="text"
-              placeholder="Graphic Designer/Video Editor"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              required
-            />
-          </Col>
-        </Form.Group>
-
-        {/* Experience */}
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={3} className="text-white rounded-pill p-2 text-center">
-            YEARS OF EXPERIENCE
-          </Form.Label>
-          <Col sm={9}>
-            <Form.Control
-              type="text"
-              placeholder="e.g., 4 Years"
-              value={experience}
-              onChange={(e) => setExperience(e.target.value)}
-              required
-            />
-          </Col>
-        </Form.Group>
-
-        {/* Mandatory Skills */}
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={3} className=" text-white rounded-pill p-2 text-center">
-            MANDATORY SKILLS
-          </Form.Label>
-          <Col sm={9}>
-            <DropdownButton title="Select Skill" onSelect={(eventKey) => handleSkillSelect(eventKey, "mandatory")}>
-              {skillsList.map((skill, idx) => (
-                <Dropdown.Item key={idx} eventKey={skill}>
-                  {skill}
-                </Dropdown.Item>
-              ))}
-            </DropdownButton>
-            <div className="mt-2">
-              {mandatorySkills.map((skill, index) => (
-                <Badge
-                  pill
-                  bg="primary"
-                  key={index}
-                  className="me-2 mb-1"
-                  onClick={() => removeSkill(skill, "mandatory")}
-                  style={{ cursor: "pointer" }}
+          {/* Mandatory Skills */}
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3} className="fw-semibold text-end">
+              Mandatory Skills
+            </Form.Label>
+            <Col sm={9}>
+              <InputGroup className="mb-2">
+                <Form.Control
+                  type="text"
+                  placeholder="Type a skill and press Add"
+                  value={newMandatorySkill}
+                  onChange={(e) => setNewMandatorySkill(e.target.value)}
+                />
+                <Button
+                  variant="outline-primary"
+                  onClick={() => addSkill("mandatory")}
+                  className="rounded-pill px-4 fw-semibold"
                 >
-                  {skill} &times;
-                </Badge>
-              ))}
-            </div>
-          </Col>
-        </Form.Group>
+                  Add
+                </Button>
+              </InputGroup>
+              <div>
+                {mandatorySkills.map((skill, index) => (
+                  <Badge
+                    pill
+                    bg="primary"
+                    key={index}
+                    className="me-2 mb-1"
+                    onClick={() => removeSkill(skill, "mandatory")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {skill} &times;
+                  </Badge>
+                ))}
+              </div>
+            </Col>
+          </Form.Group>
 
-        {/* Preferred Skills */}
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={3} className=" text-white rounded-pill p-2 text-center">
-            PREFERRED SKILLS
-          </Form.Label>
-          <Col sm={9}>
-            <DropdownButton title="Select Skill" onSelect={(eventKey) => handleSkillSelect(eventKey, "preferred")}>
-              {skillsList.map((skill, idx) => (
-                <Dropdown.Item key={idx} eventKey={skill}>
-                  {skill}
-                </Dropdown.Item>
-              ))}
-            </DropdownButton>
-            <div className="mt-2">
-              {preferredSkills.map((skill, index) => (
-                <Badge
-                  pill
-                  bg="secondary"
-                  key={index}
-                  className="me-2 mb-1"
-                  onClick={() => removeSkill(skill, "preferred")}
-                  style={{ cursor: "pointer" }}
+          {/* Preferred Skills */}
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3} className="fw-semibold text-end">
+              Preferred Skills
+            </Form.Label>
+            <Col sm={9}>
+              <InputGroup className="mb-2">
+                <Form.Control
+                  type="text"
+                  placeholder="Type a skill and press Add"
+                  value={newPreferredSkill}
+                  onChange={(e) => setNewPreferredSkill(e.target.value)}
+                />
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => addSkill("preferred")}
+                  className="rounded-pill px-4 fw-semibold"
                 >
-                  {skill} &times;
-                </Badge>
-              ))}
-            </div>
-          </Col>
-        </Form.Group>
+                  Add
+                </Button>
+              </InputGroup>
+              <div>
+                {preferredSkills.map((skill, index) => (
+                  <Badge
+                    pill
+                    bg="secondary"
+                    key={index}
+                    className="me-2 mb-1"
+                    onClick={() => removeSkill(skill, "preferred")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {skill} &times;
+                  </Badge>
+                ))}
+              </div>
+            </Col>
+          </Form.Group>
 
-        {/* Job Description */}
-        <Form.Group className="mb-3">
-          <Form.Control
-            as="textarea"
-            rows={4}
-            placeholder="Job description..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </Form.Group>
+          {/* Description */}
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3} className="fw-semibold text-end">
+              Job Description
+            </Form.Label>
+            <Col sm={9}>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                placeholder="Write the full job description here..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </Col>
+          </Form.Group>
 
-        <div className="text-center">
-          <Button variant="primary" type="submit" className="rounded-pill px-4">
-            SUBMIT
-          </Button>
-        </div>
-      </Form>
-    
-      </Container>
-     
-   
+          {/* Submit Button */}
+          <div className="text-center mt-4">
+            <Button
+              type="submit"
+              variant="primary"
+              className="px-5 rounded-pill"
+            >
+              Submit
+            </Button>
+          </div>
+        </Form>
+      </Card>
+    </Container>
   );
 };
 
