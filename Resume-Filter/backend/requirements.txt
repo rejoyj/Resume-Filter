@@ -1,0 +1,12 @@
+flask
+flask-cors
+python-docx
+pymupdf
+pandas
+openpyxl
+sentence-transformers
+scikit-learn
+faiss-cpu
+numpy
+scipy
+tqdm    

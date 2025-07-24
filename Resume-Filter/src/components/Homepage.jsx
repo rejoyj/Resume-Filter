@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Navbar, Container, Button, Row, Col } from "react-bootstrap";
+import { Navbar, Container, Button, Row, Col, Form } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
 import { FaUpload } from "react-icons/fa6";
@@ -8,14 +8,16 @@ import home from "../assets/Home.png";
 
 const Homepage = () => {
   const fileInputRef = useRef(null);
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [selectedFileName, setSelectedFileName] = useState("");
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length) {
-      setFile(files[0]);
-      console.log("Selected file:", files[0]);
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(selectedFiles);
+    if (selectedFiles.length > 0) {
+      setSelectedFileName(selectedFiles[0].name);
     }
+    console.log("Selected files:", selectedFiles);
   };
 
   const handleUploadClick = () => {
@@ -24,10 +26,13 @@ const Homepage = () => {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === "application/pdf") {
-      setFile(droppedFile);
-      console.log("Dropped file:", droppedFile);
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(
+      (file) => file.type === "application/pdf"
+    );
+    if (droppedFiles.length > 0) {
+      setFiles(droppedFiles);
+      setSelectedFileName(droppedFiles[0].name);
+      console.log("Dropped files:", droppedFiles);
     } else {
       alert("Only PDF files are allowed.");
     }
@@ -50,6 +55,7 @@ const Homepage = () => {
             </Navbar.Brand>
           </Container>
         </Navbar>
+
         <Row className="home-row">
           <Col>
             <Row>
@@ -69,24 +75,24 @@ const Homepage = () => {
               </Col>
             </Row>
           </Col>
+
           <Col>
             <Container
               className="form-container text-center p-5 shadow"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
-              {/* Hidden File Input */}
               <input
                 type="file"
                 ref={fileInputRef}
+                multiple
                 onChange={handleFileChange}
                 style={{ display: "none" }}
                 accept=".pdf"
               />
 
-              {/* Upload Button */}
               <Button
-                className="mt-5"
+                className="mt-2 mb-3"
                 onClick={handleUploadClick}
                 style={{
                   backgroundColor: "#0d6efd",
@@ -97,23 +103,35 @@ const Homepage = () => {
                   fontWeight: "500",
                 }}
               >
-                Upload Image
+                <FaUpload className="me-2" />
+                Upload Resume
               </Button>
 
-              {/* Drag/drop or paste instructions */}
-              <p className="text-muted mt-4 mb-1" style={{ fontWeight: 500 }}>
-                or drop a file,
+              <p className="text-muted mb-3" style={{ fontWeight: 500 }}>
+                or drop PDF files here
               </p>
 
-              {/* Show selected file */}
-              {file && (
-                <div className="mt-3 text-primary fw-bold">
-                  Selected File: {file.name}
-                </div>
-              )}
+              {files.length > 0 && (
+                <>
+                  <Form.Select
+                    className="mb-3"
+                    value={selectedFileName}
+                    onChange={(e) => setSelectedFileName(e.target.value)}
+                  >
+                    {files.map((file, index) => (
+                      <option key={index} value={file.name}>
+                        {file.name}
+                      </option>
+                    ))}
+                  </Form.Select>
 
-              {/* Process Button */}
+                  <p className="text-muted">
+                    Total Files Uploaded: <strong>{files.length}</strong>
+                  </p>
+                </>
+              )}
             </Container>
+
             <div
               className="mb-3"
               style={{
@@ -123,7 +141,7 @@ const Homepage = () => {
               }}
             >
               <Link to="/Page">
-                <Button className="process-btn mt-3">Process Resume</Button>
+                <Button className="process-btn mt-3">Process Resumes</Button>
               </Link>
             </div>
           </Col>
