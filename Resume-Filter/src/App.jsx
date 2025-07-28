@@ -6,10 +6,10 @@ import Page from './components/Page.jsx';
 import SideBar from './components/SideBar.jsx';
 import Homepage from './components/Homepage.jsx';
 import MailTemplatePage from './components/MailTemplatePage.jsx';
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import JobDescription from './components/JobDescription.jsx';
-
+import Chatbot from './components/Chatbot.jsx'
+import BroadCast from './components/BroadCast.jsx'
 function App() {
   return (
     <BrowserRouter>
@@ -24,6 +24,8 @@ function App() {
             <Route path="/page" element={<Page />} />
             <Route path="/mail-template" element={<MailTemplatePage />} />
             <Route path='/jobdescription' element={<JobDescription />} />
+             <Route path='/Chatbot' element={<Chatbot />} />
+            <Route path='/broadcast' element={<BroadCast />} /> 
           </Routes>
         </div>
       </div>

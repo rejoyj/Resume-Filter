@@ -1,6 +1,6 @@
 import React from "react";
 import { Nav } from "react-bootstrap";
-import { FaBriefcase, FaUserCircle, FaFile } from "react-icons/fa";
+import { FaBriefcase, FaUserCircle, FaFile ,FaBullhorn } from "react-icons/fa";
 import { VscGitPullRequestNewChanges } from "react-icons/vsc";
 import { FaMessage } from "react-icons/fa6";
 import { AiFillHome } from "react-icons/ai";
@@ -21,7 +21,7 @@ const SideBar = () => {
       <Nav.Link
         href="/jobdescription"
         className="py-3 border-bottom"
-        title="Email"
+        title="jobdescription"
       >
         <VscGitPullRequestNewChanges size={40} />
       </Nav.Link>
@@ -38,8 +38,12 @@ const SideBar = () => {
         <MdEmail size={40} />
       </Nav.Link>
 
-      <Nav.Link href="" className="py-3 border-bottom" title="Chatbot">
+      <Nav.Link href="/Chatbot" className="py-3 border-bottom" title="Chatbot">
         <FaMessage size={40} />
+      </Nav.Link>
+
+        <Nav.Link href="/broadcast" className="py-3 border-bottom" title="Broadcast">
+        <FaBullhorn size={40} />
       </Nav.Link>
     </Nav>
   );

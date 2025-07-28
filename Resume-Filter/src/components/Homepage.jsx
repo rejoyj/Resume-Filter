@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Navbar, Container, Button, Row, Col, Form } from "react-bootstrap";
 import logo from "../assets/1.-Manvian-Logo-06.png";
 import "./Homepage.css";
@@ -10,6 +10,8 @@ const Homepage = () => {
   const fileInputRef = useRef(null);
   const [files, setFiles] = useState([]);
   const [selectedFileName, setSelectedFileName] = useState("");
+
+  const navigate = useNavigate(); // ✅ For navigation with state
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -39,6 +41,38 @@ const Homepage = () => {
   };
 
   const handleDragOver = (e) => e.preventDefault();
+
+  const handleProcessResumes = async () => {
+    if (files.length === 0) {
+      alert("Please upload at least one PDF file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("resume", files[0]);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/parse-resume", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload files");
+      }
+
+      const result = await response.json();
+      console.log("Backend Response:", result);
+     
+
+      // ✅ Navigate to Page and send resume data
+      navigate("/Page", { state: { candidates: [result] } });
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Failed to process resume. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -132,17 +166,13 @@ const Homepage = () => {
               )}
             </Container>
 
-            <div
-              className="mb-3"
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Link to="/Page">
-                <Button className="process-btn mt-3">Process Resumes</Button>
-              </Link>
+            <div className="mb-3 d-flex justify-content-center align-items-center">
+              <Button
+                className="process-btn mt-3"
+                onClick={handleProcessResumes}
+              >
+                Process Resume
+              </Button>
             </div>
           </Col>
         </Row>
