@@ -67,7 +67,6 @@ const Homepage = () => {
 
       // ✅ Navigate to Page and send resume data
       navigate("/Page", { state: { candidates: [result] } });
-
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Failed to process resume. Please try again.");

@@ -191,7 +191,10 @@ const Page = () => {
               CSV Download
             </Button>
 
-            <Link to="/broadcast">
+            <Link
+              to="/broadcast"
+              state={{ recipients: candidates }} 
+            >
               <Button variant="outline-primary">
                 <FaBullhorn className="me-2 mb-1" />
                 Broadcast

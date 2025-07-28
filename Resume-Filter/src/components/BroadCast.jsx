@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, ListGroup } from "react-bootstrap";
 import { FaBullhorn } from "react-icons/fa";
-import "./BroadCast.css"; // <-- Custom styles
+import { useLocation } from "react-router-dom";
+import "./BroadCast.css";
 
 const BroadCast = () => {
+  const location = useLocation();
+  const passedRecipients = location.state?.recipients || [];
+
   const [message, setMessage] = useState("");
   const [selectAll, setSelectAll] = useState(false);
-  const [recipients, setRecipients] = useState([
-    { name: "Akshaya R", email: "rathinamakshaya4@gmail.com", selected: false },
-    { name: "Rejoy", email: "rejoy@gmail.com", selected: false }
-  ]);
+  const [recipients, setRecipients] = useState([]);
+
+  useEffect(() => {
+    const formattedRecipients = passedRecipients.length > 0
+      ? passedRecipients.map(r => ({
+          name: r.name || "No Name",
+          email: r.email || "No Email",
+          selected: false
+        }))
+      : [
+          
+        ];
+
+    setRecipients(formattedRecipients);
+  }, [passedRecipients]);
 
   const handleSelectAll = () => {
     const newState = !selectAll;
