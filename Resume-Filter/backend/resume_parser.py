@@ -1,754 +1,1032 @@
-#!/usr/bin/env python3
-"""
-AI-Powered Resume Parser with Enhanced Name, Phone, Education, and Location Extraction
-"""
-
-import os
 import re
-import json
-import logging
-from typing import Dict, List, Optional, Any, Tuple
-from pathlib import Path
-import tempfile
-
-# Web framework
-from flask import Flask, request, jsonify, send_file, render_template_string
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
-
-# Document processing
-import fitz  # PyMuPDF for PDF processing
-from docx import Document
+import spacy
 import pandas as pd
+import PyPDF2
+import docx
+from datetime import datetime
+import json
+import os
+from collections import defaultdict
+import phonenumbers
+from phonenumbers import geocoder, carrier
+import nltk
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.corpus import stopwords
+from nltk.chunk import ne_chunk
+from nltk.tag import pos_tag
+import logging
+from typing import List, Dict, Optional, Any
 
-# AI and NLP
-import openai
-from sentence_transformers import SentenceTransformer
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-
-# Vector database (using FAISS for simplicity)
-import faiss
-
-# Excel export
-import openpyxl
-from openpyxl.styles import Font, Alignment, PatternFill
-
-# Setup logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)
-
-# Configuration
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'doc'}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Initialize AI models
-try:
-    # Load sentence transformer for semantic search
-    semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
-    logger.info("Sentence transformer model loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to load sentence transformer: {e}")
-    semantic_model = None
-
-# Vector database setup
-vector_db = None
-resume_texts = []
-resume_embeddings = []
+nlp = spacy.load("en_core_web_sm")
 
 class ResumeParser:
-    """Main class for parsing resumes using AI and semantic search"""
-    
     def __init__(self):
-        self.skills_patterns = [
-            r'\b(?:Python|Java|JavaScript|C\+\+|C#|PHP|Ruby|Go|Rust|Swift|Kotlin|Scala|R|MATLAB|SQL|HTML|CSS|React|Angular|Vue|Node\.js|Django|Flask|Spring|Laravel|Bootstrap|jQuery|MongoDB|MySQL|PostgreSQL|SQLite|Redis|Docker|Kubernetes|AWS|Azure|GCP|Git|Jenkins|Terraform|Ansible|Linux|Windows|MacOS)\b',
-            r'\b(?:Machine Learning|AI|Artificial Intelligence|Data Science|Deep Learning|Neural Networks|TensorFlow|PyTorch|Scikit-learn|Pandas|NumPy|Matplotlib|Seaborn|Tableau|Power BI|Excel|Word|PowerPoint|Photoshop|Illustrator|InDesign|Figma|Sketch)\b'
-        ]
+        """Initialize the Resume Parser with all required dependencies"""
+        self._setup_nltk_data()
+        self._setup_spacy_model()
+        self._initialize_skill_keywords()
+        self._initialize_education_patterns()
         
-        self.experience_patterns = [
-            r'(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s*(?:of\s*)?(?:experience|exp)',
-            r'(?:experience|exp)\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*(?:years?|yrs?)',
-            r'(\d+)\+?\s*(?:years?|yrs?)',
-            r'over\s*(\d+)\s*(?:years?|yrs?)',
-            r'more\s*than\s*(\d+)\s*(?:years?|yrs?)'
-        ]
-
-        # Common non-name words to filter out
-        self.non_name_words = {
-            'resume', 'cv', 'curriculum', 'vitae', 'profile', 'summary', 'objective',
-            'contact', 'information', 'details', 'about', 'me', 'personal', 'data',
-            'phone', 'email', 'address', 'location', 'city', 'state', 'country',
-            'education', 'experience', 'skills', 'projects', 'achievements', 'awards',
-            'references', 'hobbies', 'interests', 'languages', 'certifications',
-            'professional', 'career', 'work', 'employment', 'job', 'position',
-            'title', 'role', 'responsibility', 'duties', 'qualification', 'degree'
+        # Statistics tracking
+        self.processing_stats = {
+            'total_processed': 0,
+            'successful_extractions': defaultdict(int),
+            'failed_files': [],
+            'processing_time': 0
         }
 
-    def allowed_file(self, filename: str) -> bool:
-        """Check if file extension is allowed"""
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    def _setup_nltk_data(self):
+        """Download and setup required NLTK data"""
+        nltk_requirements = [
+            'punkt', 'stopwords', 'averaged_perceptron_tagger',
+            'maxent_ne_chunker', 'words'
+        ]
+        
+        for requirement in nltk_requirements:
+            try:
+                nltk.data.find(f'tokenizers/{requirement}' if requirement == 'punkt' 
+                              else f'corpora/{requirement}' if requirement in ['stopwords', 'words']
+                              else f'taggers/{requirement}' if 'tagger' in requirement
+                              else f'chunkers/{requirement}')
+            except LookupError:
+                logger.info(f"Downloading NLTK data: {requirement}")
+                nltk.download(requirement, quiet=True)
+
+    def _setup_spacy_model(self):
+        """Setup spaCy model with fallback"""
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+            logger.info("✓ spaCy model 'en_core_web_sm' loaded successfully")
+        except OSError:
+            logger.warning("⚠️  spaCy model 'en_core_web_sm' not found. Using fallback parsing.")
+            logger.warning("Install it using: python -m spacy download en_core_web_sm")
+            self.nlp = None
+
+    def _initialize_skill_keywords(self):
+        """Initialize comprehensive skills keywords database"""
+        self.skills_keywords = {
+            'programming_languages': [
+                'python', 'java', 'javascript', 'typescript', 'c++', 'c#', 'php', 'ruby', 
+                'go', 'rust', 'swift', 'kotlin', 'scala', 'r', 'matlab', 'perl', 'bash', 
+                'powershell', 'html', 'css', 'sql', 'nosql', 'c', 'assembly', 'vba',
+                'dart', 'elixir', 'haskell', 'lua', 'objective-c', 'groovy', 'clojure'
+            ],
+            'frameworks_libraries': [
+                'django', 'flask', 'fastapi', 'react', 'angular', 'vue', 'svelte', 'spring',
+                'express', 'laravel', 'rails', 'asp.net', 'bootstrap', 'jquery', 'nodejs',
+                'tensorflow', 'pytorch', 'keras', 'scikit-learn', 'opencv', 'pandas', 'numpy',
+                'matplotlib', 'seaborn', 'plotly', 'streamlit', 'gradio', 'huggingface',
+                'next.js', 'nuxt.js', 'gatsby', 'redux', 'mobx', 'webpack', 'vite'
+            ],
+            'databases': [
+                'mysql', 'postgresql', 'mongodb', 'redis', 'sqlite', 'oracle', 'cassandra',
+                'elasticsearch', 'neo4j', 'dynamodb', 'firebase', 'supabase', 'mariadb',
+                'couchdb', 'influxdb', 'clickhouse', 'snowflake', 'bigquery'
+            ],
+            'cloud_devops': [
+                'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'jenkins', 'travis',
+                'ansible', 'terraform', 'vagrant', 'helm', 'istio', 'prometheus',
+                'grafana', 'elk', 'splunk', 'datadog', 'newrelic', 'ci/cd', 'gitlab-ci',
+                'github-actions', 'circleci', 'heroku', 'vercel', 'netlify'
+            ],
+            'tools_technologies': [
+                'git', 'github', 'gitlab', 'bitbucket', 'linux', 'windows', 'macos',
+                'jira', 'confluence', 'slack', 'teams', 'trello', 'asana', 'notion',
+                'figma', 'sketch', 'adobe', 'photoshop', 'illustrator', 'xd',
+                'postman', 'insomnia', 'swagger', 'apache', 'nginx', 'elasticsearch'
+            ],
+            'concepts_methodologies': [
+                'machine learning', 'artificial intelligence', 'deep learning', 'data science',
+                'web development', 'mobile development', 'devops', 'cloud computing',
+                'microservices', 'api', 'rest', 'graphql', 'agile', 'scrum', 'kanban',
+                'testing', 'automation', 'security', 'networking', 'blockchain',
+                'cybersecurity', 'data analysis', 'business intelligence', 'etl',
+                'big data', 'nlp', 'computer vision', 'iot', 'edge computing'
+            ],
+            'soft_skills': [
+                'leadership', 'communication', 'teamwork', 'problem solving', 'analytical',
+                'critical thinking', 'creativity', 'adaptability', 'time management',
+                'project management', 'collaboration', 'mentoring', 'presentation',
+                'negotiation', 'strategic thinking', 'innovation', 'customer service'
+            ]
+        }
+        
+        # Flatten all skills for easy searching
+        self.all_skills = []
+        for category in self.skills_keywords.values():
+            self.all_skills.extend(category)
+
+    def _initialize_education_patterns(self):
+        """Initialize education keywords and patterns"""
+        self.education_keywords = [
+            'bachelor', 'master', 'phd', 'doctorate', 'diploma', 'certificate',
+            'b.e.', 'b.tech', 'b.sc', 'b.com', 'b.a.', 'm.e.', 'm.tech', 'm.sc',
+            'm.com', 'm.a.', 'mba', 'bca', 'mca', 'engineering', 'computer science',
+            'information technology', 'electronics', 'mechanical', 'civil', 'electrical',
+            'degree', 'graduation', 'post graduation', 'undergraduate', 'graduate'
+        ]
+        
+        self.degree_patterns = [
+            r'b\.?e\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'b\.?tech\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'm\.?e\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'm\.?tech\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'bachelor.*?(?:of|in)\s+([^,\n.]+)',
+            r'master.*?(?:of|in)\s+([^,\n.]+)',
+            r'mba\s*(?:in\s+)?([^,\n.]*)',
+            r'b\.?sc\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'm\.?sc\.?\s*(?:in\s+)?([^,\n.]+)',
+            r'phd\s*(?:in\s+)?([^,\n.]*)',
+            r'doctorate\s*(?:in\s+)?([^,\n.]*)'
+        ]
 
     def extract_text_from_pdf(self, file_path: str) -> str:
-        """Extract text from PDF file"""
+        """Extract text from PDF file with enhanced error handling"""
         try:
-            doc = fitz.open(file_path)
             text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            return text
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                
+                # Check if PDF is encrypted
+                if pdf_reader.is_encrypted:
+                    logger.warning(f"PDF {file_path} is encrypted. Attempting to decrypt...")
+                    try:
+                        pdf_reader.decrypt('')
+                    except:
+                        logger.error(f"Could not decrypt PDF {file_path}")
+                        return ""
+                
+                for page_num, page in enumerate(pdf_reader.pages):
+                    try:
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text + "\n"
+                    except Exception as e:
+                        logger.warning(f"Error extracting text from page {page_num + 1} of {file_path}: {str(e)}")
+                        continue
+            
+            return text.strip()
         except Exception as e:
-            logger.error(f"Error extracting text from PDF: {e}")
+            logger.error(f"Error reading PDF {file_path}: {str(e)}")
             return ""
 
     def extract_text_from_docx(self, file_path: str) -> str:
-        """Extract text from DOCX file"""
+        """Extract text from DOCX file with enhanced error handling"""
         try:
-            doc = Document(file_path)
+            doc = docx.Document(file_path)
             text = ""
+            
+            # Extract text from paragraphs
             for paragraph in doc.paragraphs:
-                text += paragraph.text + "\n"
-            return text
+                if paragraph.text.strip():
+                    text += paragraph.text + "\n"
+            
+            # Extract text from tables
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            text += cell.text + " "
+                    text += "\n"
+            
+            return text.strip()
         except Exception as e:
-            logger.error(f"Error extracting text from DOCX: {e}")
+            logger.error(f"Error reading DOCX {file_path}: {str(e)}")
             return ""
 
     def extract_text_from_txt(self, file_path: str) -> str:
-        """Extract text from TXT file with proper encoding handling"""
-        try:
-            # Try UTF-8 first
-            with open(file_path, 'r', encoding='utf-8') as file:
-                return file.read()
-        except UnicodeDecodeError:
-            # Fallback to latin-1
+        """Extract text from TXT file with multiple encoding support"""
+        encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+        
+        for encoding in encodings:
             try:
-                with open(file_path, 'r', encoding='latin-1') as file:
-                    return file.read()
+                with open(file_path, 'r', encoding=encoding) as file:
+                    return file.read().strip()
             except UnicodeDecodeError:
-                # Final fallback - read as binary and decode with errors='ignore'
-                try:
-                    with open(file_path, 'rb') as file:
-                        content = file.read()
-                        return content.decode('utf-8', errors='ignore')
-                except Exception as e:
-                    logger.error(f"Error reading text file with encoding fallbacks: {e}")
-                    return ""
-        except Exception as e:
-            logger.error(f"Error reading text file: {e}")
-            return ""
-
-    def extract_text_from_file(self, file_path: str) -> str:
-        """Extract text from various file formats"""
-        extension = Path(file_path).suffix.lower()
-        
-        if extension == '.pdf':
-            return self.extract_text_from_pdf(file_path)
-        elif extension in ['.docx', '.doc']:
-            return self.extract_text_from_docx(file_path)
-        elif extension == '.txt':
-            return self.extract_text_from_txt(file_path)
-        else:
-            return ""
-
-    def is_likely_name(self, text: str) -> bool:
-        """Check if text is likely to be a person's name"""
-        words = text.strip().split()
-        
-        # Basic checks
-        if len(words) < 1 or len(words) > 5:
-            return False
-        
-        # Check if all words are alphabetic (allowing for apostrophes and hyphens)
-        for word in words:
-            if not re.match(r"^[A-Za-z'-]+$", word):
-                return False
-            
-            # Check if word is too short or too long
-            if len(word) < 2 or len(word) > 20:
-                return False
-            
-            # Check if it's a common non-name word
-            if word.lower() in self.non_name_words:
-                return False
-        
-        # Names typically have title case
-        proper_case_count = sum(1 for word in words if word[0].isupper() and word[1:].islower())
-        if proper_case_count < len(words) * 0.5:  # At least half should be proper case
-            return False
-        
-        return True
-
-    def extract_name_with_ai(self, text: str) -> Optional[str]:
-        """Enhanced name extraction using multiple strategies"""
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
-        
-        # Strategy 1: Look for name at the beginning of the document
-        for i, line in enumerate(lines[:8]):  # Check first 8 lines
-            # Skip lines that are clearly headers or metadata
-            if any(keyword in line.lower() for keyword in ['resume', 'cv', 'curriculum vitae']):
                 continue
-            
-            # Clean the line
-            cleaned_line = re.sub(r'[^\w\s\'-]', ' ', line)
-            cleaned_line = re.sub(r'\s+', ' ', cleaned_line).strip()
-            
-            if self.is_likely_name(cleaned_line):
-                return cleaned_line
+            except Exception as e:
+                logger.error(f"Error reading TXT {file_path}: {str(e)}")
+                return ""
         
-        # Strategy 2: Look for name patterns with labels
+        logger.error(f"Could not decode TXT file {file_path} with any encoding")
+        return ""
+
+    def extract_name(self, text: str) -> Optional[str]:
+        """Extract name from resume text with improved accuracy"""
+        lines = text.split('\n')
+        
+        # Strategy 1: Look for name in first few lines
+        for i, line in enumerate(lines[:5]):
+            line = line.strip()
+            if len(line) > 2 and len(line) < 60:
+                words = line.split()
+                if 2 <= len(words) <= 4:
+                    # Check if all words are likely names (alphabetic + some punctuation)
+                    if all(re.match(r'^[A-Za-z\.\,\s]+$', word) for word in words):
+                        # Avoid lines that look like headers or titles
+                        if not any(keyword in line.lower() for keyword in 
+                                 ['resume', 'cv', 'curriculum', 'profile', 'contact', 'email', 'phone']):
+                            return ' '.join(word.strip('.,') for word in words).title()
+        
+        # Strategy 2: Use spaCy if available
+        if self.nlp:
+            doc = self.nlp(text[:1000])  # Process first 1000 characters
+            person_entities = [ent.text.strip() for ent in doc.ents if ent.label_ == "PERSON"]
+            
+            if person_entities:
+                # Return the first person entity that looks like a full name
+                for entity in person_entities:
+                    words = entity.split()
+                    if 2 <= len(words) <= 4 and len(entity) < 50:
+                        return entity.title()
+        
+        # Strategy 3: Pattern matching for name formats
         name_patterns = [
-            r'(?:Name|Full Name|Candidate|Applicant)[\s:]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
-            r'^([A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*$',  # Simple first/last name pattern
+            r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]*\.?)*\s+[A-Z][a-z]+)$',  # First Last format
+            r'^([A-Z][a-z]+\s+[A-Z]\.\s+[A-Z][a-z]+)$',  # First M. Last format
+            r'^([A-Z][a-z]+\s+[A-Z][a-z]+\s+[A-Z][a-z]+)$'  # First Middle Last format
         ]
         
-        for pattern in name_patterns:
-            matches = re.findall(pattern, text, re.MULTILINE)
-            for match in matches:
-                if self.is_likely_name(match):
-                    return match
-        
-        # Strategy 3: Find standalone proper nouns that could be names
-        lines_text = '\n'.join(lines[:10])
-        potential_names = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\b', lines_text)
-        
-        for name in potential_names:
-            if self.is_likely_name(name) and len(name.split()) >= 2:
-                return name
+        for line in lines[:10]:
+            line = line.strip()
+            for pattern in name_patterns:
+                match = re.match(pattern, line)
+                if match:
+                    return match.group(1)
         
         return None
 
     def extract_email(self, text: str) -> Optional[str]:
-        """Enhanced email extraction with better patterns"""
-        email_patterns = [
-            r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-            r'\b[A-Za-z0-9][A-Za-z0-9._%+-]*@[A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z]{2,}\b'
-        ]
+        """Extract email from resume text with improved validation"""
+        # Enhanced email pattern that handles more formats
+        email_pattern = r'\b[A-Za-z0-9]([A-Za-z0-9._%-]*[A-Za-z0-9])?@[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,}\b'
+        emails = re.findall(email_pattern, text, re.IGNORECASE)
         
-        all_emails = []
-        for pattern in email_patterns:
-            matches = re.findall(pattern, text)
-            all_emails.extend(matches)
+        if emails:
+            # Reconstruct full email from tuple groups
+            full_emails = []
+            for email_parts in emails:
+                if isinstance(email_parts, tuple):
+                    # This handles the case where regex groups are captured
+                    continue
+                else:
+                    full_emails.append(email_parts)
+            
+            # Simple pattern for complete emails
+            simple_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+            simple_emails = re.findall(simple_pattern, text, re.IGNORECASE)
+            
+            if simple_emails:
+                # Filter out obviously fake or template emails
+                valid_emails = [email for email in simple_emails 
+                              if not any(fake in email.lower() for fake in 
+                                       ['example', 'test', 'sample', 'dummy', 'placeholder'])]
+                return valid_emails[0] if valid_emails else simple_emails[0]
         
-        # Filter out invalid emails and return the most likely one
-        valid_emails = []
-        for email in all_emails:
-            # Basic validation
-            if '@' in email and '.' in email.split('@')[1]:
-                # Avoid emails that are too generic or fake
-                if not any(fake in email.lower() for fake in ['example', 'test', 'dummy', 'sample']):
-                    valid_emails.append(email)
-        
-        return valid_emails[0] if valid_emails else None
+        return None
 
     def extract_phone(self, text: str) -> Optional[str]:
-        """Enhanced phone number extraction with comprehensive patterns"""
-        # Remove common phone prefixes for better extraction
-        cleaned_text = re.sub(r'(?i)(?:phone|tel|mobile|cell|contact|number)[\s:]*', '', text)
-        
+        """Extract phone number from resume text with international support"""
+        # Multiple phone patterns for different formats
         phone_patterns = [
-            # International formats
-            r'\+\d{1,4}[\s\-\.]?\(?\d{1,4}\)?[\s\-\.]?\d{1,4}[\s\-\.]?\d{1,9}',
-            # US formats with country code
-            r'\+1[\s\-\.]?\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}',
-            # Standard US formats
-            r'\(?\d{3}\)?[\s\-\.]?\d{3}[\s\-\.]?\d{4}',
-            # International without +
-            r'\b\d{1,4}[\s\-\.]?\d{3,4}[\s\-\.]?\d{3,4}[\s\-\.]?\d{3,4}\b',
-            # 10-digit numbers
-            r'\b\d{10}\b',
-            # Various separators
-            r'\b\d{3}[\s\-\.]\d{3}[\s\-\.]\d{4}\b',
-            # With parentheses
-            r'\(\d{3}\)[\s\-\.]?\d{3}[\s\-\.]?\d{4}',
-            # Indian format
-            r'\+91[\s\-]?\d{10}|\b[6-9]\d{9}\b',
-            # Other international formats
-            r'\b\d{2,4}[\s\-]\d{2,4}[\s\-]\d{2,4}[\s\-]\d{2,4}\b'
+            r'(\+91[-.\s]?)?[6789]\d{9}',  # Indian mobile numbers
+            r'(\+1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?[2-9]\d{2}[-.\s]?\d{4}',  # US numbers
+            r'(\+44[-.\s]?)?(?:0)?[1-9]\d{8,9}',  # UK numbers
+            r'(\+\d{1,3}[-.\s]?)?\d{10,14}',  # Generic international
+            r'\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b',  # Standard format
+            r'\(\d{3}\)\s*\d{3}[-.\s]?\d{4}',  # (xxx) xxx-xxxx format
+            r'\b\d{10}\b'  # 10 digit numbers
         ]
-        
-        found_numbers = []
         
         for pattern in phone_patterns:
-            matches = re.findall(pattern, cleaned_text)
-            for match in matches:
-                # Clean the number
-                clean_number = re.sub(r'[^\d+]', '', match)
-                if len(clean_number) >= 7:  # Minimum reasonable phone number length
-                    found_numbers.append(match.strip())
-        
-        if found_numbers:
-            # Return the first valid number, preferring longer/more complete formats
-            found_numbers.sort(key=len, reverse=True)
-            return found_numbers[0]
+            matches = re.findall(pattern, text)
+            if matches:
+                phone = matches[0]
+                if isinstance(phone, tuple):
+                    phone = ''.join(phone)
+                
+                # Clean up the phone number
+                clean_phone = re.sub(r'[^\d+]', '', phone)
+                
+                # Validate length
+                if 10 <= len(clean_phone.replace('+', '')) <= 15:
+                    return clean_phone
         
         return None
+
+    def extract_skills(self, text: str) -> Optional[List[str]]:
+        """Extract skills from resume text with enhanced matching"""
+        text_lower = text.lower()
+        found_skills = set()
+        
+        # Method 1: Direct keyword matching
+        for skill in self.all_skills:
+            skill_lower = skill.lower()
+            
+            # Exact match or word boundary match
+            if skill_lower in text_lower:
+                # Check if it's a whole word match for better accuracy
+                pattern = r'\b' + re.escape(skill_lower) + r'\b'
+                if re.search(pattern, text_lower):
+                    found_skills.add(skill.title())
+        
+        # Method 2: Skills section parsing
+        skills_sections = [
+            'skills', 'technical skills', 'core competencies', 'expertise',
+            'technologies', 'programming languages', 'tools', 'frameworks'
+        ]
+        
+        for section in skills_sections:
+            section_pattern = rf'{section}[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)'
+            match = re.search(section_pattern, text, re.IGNORECASE | re.MULTILINE)
+            
+            if match:
+                skills_text = match.group(1).lower()
+                for skill in self.all_skills:
+                    if skill.lower() in skills_text:
+                        found_skills.add(skill.title())
+        
+        # Method 3: Bullet point parsing
+        bullet_patterns = [r'•\s*([^\n]+)', r'▪\s*([^\n]+)', r'-\s*([^\n]+)', r'\*\s*([^\n]+)']
+        
+        for pattern in bullet_patterns:
+            matches = re.findall(pattern, text)
+            for match in matches:
+                match_lower = match.lower()
+                for skill in self.all_skills:
+                    if skill.lower() in match_lower:
+                        found_skills.add(skill.title())
+        
+        return list(found_skills) if found_skills else None
+
+    def extract_education(self, text: str) -> Optional[List[str]]:
+        """Extract education information with improved parsing"""
+        education_info = set()
+        text_lower = text.lower()
+        
+        # Method 1: Degree pattern matching
+        for pattern in self.degree_patterns:
+            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+            for match in matches:
+                if match.strip() and len(match.strip()) > 2:
+                    education_info.add(match.strip().title())
+        
+        # Method 2: Education section parsing
+        education_patterns = [
+            r'education[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)',
+            r'academic.*?(?:background|qualification|record)[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)',
+            r'qualification[s]?[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)'
+        ]
+        
+        for pattern in education_patterns:
+            match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+            if match:
+                edu_section = match.group(1)
+                
+                # Extract degree information from the section
+                for degree_pattern in self.degree_patterns:
+                    degree_matches = re.findall(degree_pattern, edu_section, re.IGNORECASE)
+                    for degree_match in degree_matches:
+                        if degree_match.strip():
+                            education_info.add(degree_match.strip().title())
+        
+        # Method 3: Look for university/institution names
+        university_patterns = [
+            r'university\s+of\s+([^,\n]+)',
+            r'([^,\n]*)\s+university',
+            r'([^,\n]*)\s+institute\s+of\s+technology',
+            r'([^,\n]*)\s+college\s+of\s+([^,\n]+)'
+        ]
+        
+        for pattern in university_patterns:
+            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+            for match in matches:
+                if isinstance(match, tuple):
+                    for m in match:
+                        if m.strip() and len(m.strip()) > 3:
+                            education_info.add(m.strip().title())
+                else:
+                    if match.strip() and len(match.strip()) > 3:
+                        education_info.add(match.strip().title())
+        
+        # Clean and filter education info
+        cleaned_education = []
+        for edu in education_info:
+            if len(edu) > 3 and len(edu) < 100:  # Reasonable length
+                cleaned_education.append(edu)
+        
+        return cleaned_education if cleaned_education else None
 
     def extract_location(self, text: str) -> Optional[str]:
-        """Enhanced location extraction with multiple strategies"""
+        """Extract location from resume text with enhanced patterns"""
+        # Enhanced location patterns
         location_patterns = [
-            # Explicit location labels
-            r'(?i)(?:Location|Address|Based in|Located in|City|Residence|Lives in)[\s:]+([^\n\r]+?)(?=\n|$|\||•)',
-            # City, State format
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2}(?:\s+\d{5})?)\b',
-            # City, State, Country
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z][a-z]+,\s*[A-Z][a-z]+)\b',
-            # ZIP code patterns (US)
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?)\b',
-            # International postal codes
-            r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z0-9]{2,8})\b',
-            # Common address patterns
-            r'\b\d+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Street|St|Avenue|Ave|Road|Rd|Drive|Dr|Lane|Ln|Boulevard|Blvd))?[,\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,?\s*[A-Z]{2,})',
+            r'(?:address|location|city|residence|based\s+in)[:\-\s]*([^,\n]+(?:,\s*[^,\n]+)*)',
+            r'\b([A-Za-z\s]+,\s*[A-Za-z\s]+,\s*\d{5,6})\b',  # City, State, PIN
+            r'\b([A-Za-z\s]+,\s*[A-Za-z\s]+)\b(?=\s*\d{5,6})',  # City, State before PIN
+            r'(?:from|in)\s+([A-Za-z\s]+,\s*[A-Za-z\s]+)',  # "from City, State"
+            r'\b(\d{5,6})\s*,?\s*([A-Za-z\s]+(?:,\s*[A-Za-z\s]+)?)\b'  # PIN, City, State
         ]
-        
-        locations = []
         
         for pattern in location_patterns:
-            matches = re.findall(pattern, text)
-            for match in matches:
-                location = match.strip(' ,.')
-                if len(location) > 3 and len(location) < 100:  # Reasonable location length
-                    locations.append(location)
-        
-        # Also look for common location keywords in context
-        location_keywords = [
-            'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia',
-            'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville',
-            'Fort Worth', 'Columbus', 'Charlotte', 'San Francisco', 'Indianapolis',
-            'Seattle', 'Denver', 'Washington', 'Boston', 'Nashville', 'Baltimore',
-            'London', 'Paris', 'Berlin', 'Tokyo', 'Sydney', 'Toronto', 'Mumbai',
-            'Delhi', 'Bangalore', 'Chennai', 'Hyderabad', 'Pune', 'Kolkata',
-            'California', 'Texas', 'Florida', 'New York', 'Pennsylvania', 'Illinois'
-        ]
-        
-        for keyword in location_keywords:
-            if keyword in text:
-                # Find the context around the keyword
-                pattern = rf'.{{0,50}}\b{re.escape(keyword)}\b.{{0,50}}'
-                matches = re.findall(pattern, text, re.IGNORECASE)
-                if matches:
-                    context = matches[0].strip()
-                    # Extract the cleanest location part
-                    location_match = re.search(rf'\b{re.escape(keyword)}\b[^.\n]*', context, re.IGNORECASE)
-                    if location_match:
-                        locations.append(location_match.group().strip())
-        
-        if locations:
-            # Return the most complete location (usually the longest)
-            locations.sort(key=len, reverse=True)
-            return locations[0]
-        
-        return None
-
-    def extract_education(self, text: str) -> Optional[str]:
-        """Enhanced education extraction with better pattern matching"""
-        education_sections = []
-        
-        # Strategy 1: Find education sections
-        education_section_patterns = [
-            r'(?i)(Education|Academic|Qualification|Degree|University|College|School)[\s:]*\n?(.*?)(?=\n(?:[A-Z][^a-z]*|Experience|Work|Skills|Projects|$))',
-            r'(?i)(?:Education|Academic Background|Educational Background)[\s:]*\n?(.*?)(?=\n\n|\n[A-Z]|$)'
-        ]
-        
-        for pattern in education_section_patterns:
-            matches = re.findall(pattern, text, re.DOTALL)
-            for match in matches:
-                if isinstance(match, tuple):
-                    education_sections.append(match[1].strip())
-                else:
-                    education_sections.append(match.strip())
-        
-        # Strategy 2: Look for degree patterns throughout the text
-        degree_patterns = [
-            # Full degree names
-            r'(?i)\b(Bachelor(?:\s+of\s+(?:Science|Arts|Engineering|Technology|Business|Commerce|Computer Science|Information Technology))?)\b(?:\s+(?:in|of)\s+([^,\n.]+))?',
-            r'(?i)\b(Master(?:\s+of\s+(?:Science|Arts|Engineering|Technology|Business|Commerce|Computer Science|Information Technology))?)\b(?:\s+(?:in|of)\s+([^,\n.]+))?',
-            r'(?i)\b((?:PhD|Ph\.D|Doctorate|Doctoral)(?:\s+in\s+([^,\n.]+))?)\b',
-            r'(?i)\b(MBA|MCA|BCA|B\.Tech|M\.Tech|B\.Sc|M\.Sc|B\.A|M\.A|B\.Com|M\.Com)\b(?:\s+(?:in|of)\s+([^,\n.]+))?',
-            # Abbreviated forms
-            r'\b([BM]\.?[AES]\.?|PhD|MBA|MCA|BCA)\b',
-            # University names
-            r'(?i)\b(University|Institute|College|School)\s+of\s+([^,\n.]+)',
-            r'(?i)\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(University|Institute|College)',
-        ]
-        
-        degrees = []
-        for pattern in degree_patterns:
-            matches = re.findall(pattern, text)
-            for match in matches:
-                if isinstance(match, tuple):
-                    degree_info = ' '.join(filter(None, match))
-                else:
-                    degree_info = match
-                
-                if len(degree_info.strip()) > 2:
-                    degrees.append(degree_info.strip())
-        
-        # Strategy 3: Look for graduation years and institutions
-        year_institution_patterns = [
-            r'(?i)(?:graduated|graduation|completed|earned|received|obtained)[\s,]*(?:in|from)?[\s,]*(\d{4})[\s,]*(?:from|at)?[\s,]*([A-Z][^,\n.]+)',
-            r'(\d{4})[\s,]*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:University|Institute|College|School)))',
-            r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:University|Institute|College|School)))[\s,]*(\d{4})'
-        ]
-        
-        for pattern in year_institution_patterns:
-            matches = re.findall(pattern, text)
-            for match in matches:
-                year, institution = match
-                education_info = f"{institution} ({year})"
-                degrees.append(education_info)
-        
-        # Combine all education information
-        all_education = education_sections + degrees
-        
-        if all_education:
-            # Remove duplicates and combine
-            unique_education = list(set(all_education))
-            # Sort by length to prioritize more complete information
-            unique_education.sort(key=len, reverse=True)
-            
-            # Limit to top 3 most relevant entries
-            final_education = unique_education[:3]
-            return '; '.join(final_education)
-        
-        return None
-
-    def extract_skills(self, text: str) -> List[str]:
-        """Extract skills using pattern matching and semantic search"""
-        skills = set()
-        
-        # Pattern-based extraction
-        for pattern in self.skills_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            skills.update(matches)
-        
-        # Look for skills section
-        skills_section_pattern = r'(?:Skills?|Technical Skills?|Core Competencies|Technologies?):(.*?)(?:\n\n|\n[A-Z]|$)'
-        skills_match = re.search(skills_section_pattern, text, re.IGNORECASE | re.DOTALL)
-        
-        if skills_match:
-            skills_text = skills_match.group(1)
-            # Split by common delimiters
-            skill_items = re.split(r'[,;•\-\n]', skills_text)
-            for skill in skill_items:
-                skill = skill.strip()
-                if skill and len(skill) < 50:  # Reasonable skill length
-                    skills.add(skill)
-        
-        return list(skills)
-
-    def extract_experience_years(self, text: str) -> Optional[str]:
-        """Extract years of experience using pattern matching"""
-        for pattern in self.experience_patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
             if matches:
+                location = matches[0]
+                if isinstance(location, tuple):
+                    location = ', '.join(filter(None, location))
+                
+                location = location.strip()
+                if 3 < len(location) < 100:
+                    return location
+        
+        # Use spaCy for location extraction if available
+        if self.nlp:
+            doc = self.nlp(text)
+            locations = []
+            for ent in doc.ents:
+                if ent.label_ in ["GPE", "LOC"]:  # Geopolitical entity or location
+                    locations.append(ent.text)
+            
+            if locations:
+                return ", ".join(locations[:2])  # Return first two locations
+        
+        return None
+
+    def extract_experience(self, text: str) -> Optional[float]:
+        """Extract total years of experience with improved accuracy"""
+        text_lower = text.lower()
+        
+        # Enhanced experience patterns
+        experience_patterns = [
+            r'(\d+(?:\.\d+)?)\s*(?:\+)?\s*years?\s+(?:of\s+)?(?:work\s+)?experience',
+            r'experience.*?(\d+(?:\.\d+)?)\s*(?:\+)?\s*years?',
+            r'(\d+(?:\.\d+)?)\s*(?:\+)?\s*yrs?\s+(?:of\s+)?(?:work\s+)?experience',
+            r'experience.*?(\d+(?:\.\d+)?)\s*(?:\+)?\s*yrs?',
+            r'(\d+(?:\.\d+)?)\s*(?:\+)?\s*years?\s+(?:in|of|with)',
+            r'over\s+(\d+(?:\.\d+)?)\s*years?',
+            r'more\s+than\s+(\d+(?:\.\d+)?)\s*years?',
+            r'(\d+(?:\.\d+)?)\+\s*years?'
+        ]
+        
+        years = []
+        
+        for pattern in experience_patterns:
+            matches = re.findall(pattern, text_lower)
+            for match in matches:
                 try:
-                    years = float(matches[0])
-                    return f"{years} years"
+                    year_value = float(match)
+                    if 0 <= year_value <= 50:  # Reasonable range
+                        years.append(year_value)
                 except ValueError:
                     continue
         
-        return None
+        if years:
+            return max(years)  # Return the highest experience mentioned
+        
+        # Try to calculate from employment dates
+        date_patterns = [
+            r'(\d{4})\s*[-–—]\s*(\d{4}|present|current)',
+            r'(\w+\s+\d{4})\s*[-–—]\s*(\w+\s+\d{4}|present|current)',
+            r'(\d{1,2}/\d{4})\s*[-–—]\s*(\d{1,2}/\d{4}|present|current)'
+        ]
+        
+        employment_years = []
+        current_year = datetime.now().year
+        
+        for pattern in date_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                try:
+                    start_str, end_str = match
+                    
+                    # Extract start year
+                    start_year_match = re.search(r'\d{4}', start_str)
+                    if not start_year_match:
+                        continue
+                    start_year = int(start_year_match.group())
+                    
+                    # Extract end year
+                    if any(word in end_str.lower() for word in ['present', 'current', 'now']):
+                        end_year = current_year
+                    else:
+                        end_year_match = re.search(r'\d{4}', end_str)
+                        if not end_year_match:
+                            continue
+                        end_year = int(end_year_match.group())
+                    
+                    # Validate years
+                    if 1990 <= start_year <= current_year and start_year <= end_year:
+                        employment_years.append(end_year - start_year)
+                
+                except (ValueError, AttributeError):
+                    continue
+        
+        return sum(employment_years) if employment_years else None
 
-    def semantic_search_enhancement(self, text: str, field: str) -> Optional[str]:
-        """Enhance extraction using semantic search"""
-        if not semantic_model:
-            return None
+    def parse_resume(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Parse a single resume file and extract information"""
+        start_time = datetime.now()
         
         try:
-            # Create embeddings for the text
-            sentences = text.split('.')
-            embeddings = semantic_model.encode(sentences)
+            # Determine file type and extract text
+            file_extension = os.path.splitext(file_path)[1].lower()
             
-            # Define query embeddings for different fields
-            field_queries = {
-                'name': 'person name full name individual',
-                'email': 'email address contact information',
-                'phone': 'phone number telephone contact',
-                'location': 'address location city state country',
-                'education': 'education degree university college bachelor master phd',
-                'skills': 'skills technical abilities competencies programming languages',
-                'experience': 'experience years worked professional background'
-            }
-            
-            if field not in field_queries:
+            if file_extension == '.pdf':
+                text = self.extract_text_from_pdf(file_path)
+            elif file_extension == '.docx':
+                text = self.extract_text_from_docx(file_path)
+            elif file_extension == '.txt':
+                text = self.extract_text_from_txt(file_path)
+            else:
+                logger.error(f"Unsupported file format: {file_extension}")
                 return None
             
-            query_embedding = semantic_model.encode([field_queries[field]])
+            if not text.strip():
+                logger.warning(f"No text extracted from {file_path}")
+                return None
             
-            # Find most similar sentences
-            similarities = cosine_similarity(query_embedding, embeddings)[0]
-            top_indices = np.argsort(similarities)[-3:]  # Top 3 most similar
+            # Extract information
+            parsed_data = {
+                'file_name': os.path.basename(file_path),
+                'file_path': file_path,
+                'name': self.extract_name(text),
+                'email': self.extract_email(text),
+                'phone_number': self.extract_phone(text),
+                'skills': self.extract_skills(text),
+                'education': self.extract_education(text),
+                'location': self.extract_location(text),
+                'total_experience': self.extract_experience(text),
+                'processed_at': datetime.now().isoformat(),
+                'processing_time': (datetime.now() - start_time).total_seconds()
+            }
             
-            relevant_sentences = [sentences[i].strip() for i in top_indices if similarities[i] > 0.3]
+            # Update statistics
+            self.processing_stats['total_processed'] += 1
+            for field in ['name', 'email', 'phone_number', 'skills', 'education', 'location', 'total_experience']:
+                if parsed_data.get(field):
+                    self.processing_stats['successful_extractions'][field] += 1
             
-            return ' '.join(relevant_sentences) if relevant_sentences else None
+            logger.info(f"✓ Successfully parsed {os.path.basename(file_path)}")
+            return parsed_data
             
         except Exception as e:
-            logger.error(f"Semantic search error: {e}")
+            logger.error(f"✗ Error parsing {file_path}: {str(e)}")
+            self.processing_stats['failed_files'].append({
+                'file': os.path.basename(file_path),
+                'error': str(e)
+            })
             return None
 
-    def parse_resume(self, file_path: str) -> Dict[str, Any]:
-        """Main method to parse resume and extract all information"""
-        # Extract text from file
-        text = self.extract_text_from_file(file_path)
+    def parse_multiple_resumes(self, folder_path: str) -> List[Dict[str, Any]]:
+        """Parse multiple resume files from a folder"""
+        supported_extensions = ['.pdf', '.docx', '.txt']
+        parsed_resumes = []
         
-        if not text:
-            return {
-                'error': 'Could not extract text from file',
-                'name': None,
-                'email': None,
-                'phone': None,
-                'location': None,
-                'education': None,
-                'skills': [],
-                'experience': None
-            }
+        if not os.path.exists(folder_path):
+            logger.error(f"Folder {folder_path} does not exist!")
+            return []
         
-        # Store in vector database for future semantic searches
-        if semantic_model:
+        # Get all supported files
+        files = []
+        for filename in os.listdir(folder_path):
+            if os.path.splitext(filename)[1].lower() in supported_extensions:
+                files.append(os.path.join(folder_path, filename))
+        
+        if not files:
+            logger.warning(f"No supported resume files found in {folder_path}")
+            return []
+        
+        logger.info(f"Found {len(files)} resume files to process...")
+        
+        # Process each file
+        for i, file_path in enumerate(files, 1):
+            filename = os.path.basename(file_path)
+            logger.info(f"Processing {i}/{len(files)}: {filename}")
+            
             try:
-                embedding = semantic_model.encode([text])
-                resume_texts.append(text)
-                resume_embeddings.append(embedding[0])
+                parsed_data = self.parse_resume(file_path)
+                if parsed_data:
+                    parsed_resumes.append(parsed_data)
             except Exception as e:
-                logger.error(f"Error creating embeddings: {e}")
+                logger.error(f"Error processing {filename}: {str(e)}")
+                continue
         
-        # Extract information with enhanced methods
-        result = {
-            'name': self.extract_name_with_ai(text),
-            'email': self.extract_email(text),
-            'phone': self.extract_phone(text),
-            'location': self.extract_location(text),
-            'education': self.extract_education(text),
-            'skills': self.extract_skills(text),
-            'experience': self.extract_experience_years(text)
+        # Log final statistics
+        total_time = sum(resume.get('processing_time', 0) for resume in parsed_resumes)
+        self.processing_stats['processing_time'] = total_time
+        
+        logger.info(f"Processing complete: {len(parsed_resumes)}/{len(files)} files successfully parsed")
+        return parsed_resumes
+
+    def get_processing_statistics(self) -> Dict[str, Any]:
+        """Get detailed processing statistics"""
+        return {
+            'total_processed': self.processing_stats['total_processed'],
+            'successful_extractions': dict(self.processing_stats['successful_extractions']),
+            'failed_files': self.processing_stats['failed_files'],
+            'processing_time': round(self.processing_stats['processing_time'], 2),
+            'success_rates': {
+                field: round((count / max(self.processing_stats['total_processed'], 1)) * 100, 1)
+                for field, count in self.processing_stats['successful_extractions'].items()
+            } if self.processing_stats['total_processed'] > 0 else {}
         }
-        
-        # Enhance with semantic search for fields that weren't found
-        for field in ['name', 'location', 'education']:
-            if not result[field]:
-                enhanced = self.semantic_search_enhancement(text, field)
-                if enhanced:
-                    result[field] = enhanced[:200]  # Limit length
-        
-        return result
 
-# Initialize parser
-parser = ResumeParser()
+    def reset_statistics(self):
+        """Reset processing statistics"""
+        self.processing_stats = {
+            'total_processed': 0,
+            'successful_extractions': defaultdict(int),
+            'failed_files': [],
+            'processing_time': 0
+        }
 
-@app.route('/')
-def index():
-    """Serve the main HTML page"""
-    try:
-        with open('index.html', 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        return "Please ensure index.html is in the same directory as this script"
-    except UnicodeDecodeError:
-        # Fallback for encoding issues
-        try:
-            with open('index.html', 'r', encoding='latin-1') as f:
-                return f.read()
-        except Exception:
-            return "Error reading HTML file. Please check file encoding."
-
-@app.route('/api/parse-resume', methods=['POST'])
-def parse_resume_api():
-    """API endpoint to parse uploaded resume"""
-    try:
-        if 'resume' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
+    def display_results(self, parsed_resumes: List[Dict[str, Any]]):
+        """Display parsed results in formatted output"""
+        if not parsed_resumes:
+            print("No resumes were successfully parsed.")
+            return
         
-        file = request.files['resume']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
+        print(f"\n{'='*70}")
+        print(f"PARSED RESUME DATA ({len(parsed_resumes)} resumes)")
+        print(f"{'='*70}\n")
         
-        if not parser.allowed_file(file.filename):
-            return jsonify({'error': 'File type not allowed'}), 400
-        
-        # Save uploaded file
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(file_path)
-        
-        try:
-            # Parse the resume
-            result = parser.parse_resume(file_path)
+        for i, resume_data in enumerate(parsed_resumes, 1):
+            print(f"Resume {i}: {resume_data['file_name']}")
+            print("-" * 50)
             
-            # Clean up uploaded file
-            os.remove(file_path)
+            # Display in organized format
+            fields_display = [
+                ('Name', resume_data.get('name', 'Not found')),
+                ('Email', resume_data.get('email', 'Not found')),
+                ('Phone', resume_data.get('phone_number', 'Not found')),
+                ('Location', resume_data.get('location', 'Not found')),
+                ('Experience', f"{resume_data.get('total_experience', 'Not found')} years" 
+                             if resume_data.get('total_experience') else 'Not found'),
+            ]
             
-            return jsonify(result)
+            for field_name, field_value in fields_display:
+                print(f"{field_name:12}: {field_value}")
+            
+            # Skills
+            skills = resume_data.get('skills', [])
+            if skills:
+                print(f"{'Skills':12}: {', '.join(skills[:10])}")  # Show first 10 skills
+                if len(skills) > 10:
+                    print(f"{'':12}  ... and {len(skills) - 10} more")
+            else:
+                print(f"{'Skills':12}: Not found")
+            
+            # Education
+            education = resume_data.get('education', [])
+            if education:
+                print(f"{'Education':12}: {education[0]}")  # Show first education entry
+                if len(education) > 1:
+                    for edu in education[1:3]:  # Show up to 2 more
+                        print(f"{'':12}  {edu}")
+                    if len(education) > 3:
+                        print(f"{'':12}  ... and {len(education) - 3} more")
+            else:
+                print(f"{'Education':12}: Not found")
+            
+            print(f"{'Processed':12}: {resume_data.get('processed_at', 'Unknown')}")
+            print()
+        
+        # Display statistics
+        stats = self.get_processing_statistics()
+        if stats['total_processed'] > 0:
+            print(f"{'='*70}")
+            print("EXTRACTION STATISTICS")
+            print(f"{'='*70}")
+            print(f"Total files processed: {stats['total_processed']}")
+            print(f"Total processing time: {stats['processing_time']} seconds")
+            print(f"Average time per file: {stats['processing_time'] / stats['total_processed']:.2f} seconds")
+            print()
+            print("Field extraction success rates:")
+            for field, rate in stats['success_rates'].items():
+                count = stats['successful_extractions'][field]
+                print(f"  {field.replace('_', ' ').title():15}: {count:3d}/{stats['total_processed']} ({rate:5.1f}%)")
+            
+            if stats['failed_files']:
+                print(f"\nFailed files ({len(stats['failed_files'])}):")
+                for failed in stats['failed_files']:
+                    print(f"  - {failed['file']}: {failed['error']}")
+
+    def save_to_json(self, parsed_resumes: List[Dict[str, Any]], output_file: str = 'parsed_resumes.json'):
+        """Save parsed results to JSON file with metadata"""
+        try:
+            # Prepare data with metadata
+            export_data = {
+                'metadata': {
+                    'exported_at': datetime.now().isoformat(),
+                    'total_resumes': len(parsed_resumes),
+                    'parser_version': '2.0.0',
+                    'statistics': self.get_processing_statistics()
+                },
+                'resumes': parsed_resumes
+            }
+            
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"✓ Results saved to {output_file}")
+            return True
             
         except Exception as e:
-            # Clean up on error
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            raise e
-            
-    except Exception as e:
-        logger.error(f"Error parsing resume: {e}")
-        return jsonify({'error': str(e)}), 500
+            logger.error(f"❌ Error saving to JSON: {str(e)}")
+            return False
 
-@app.route('/api/export-excel', methods=['POST'])
-def export_excel():
-    """Export parsed data to Excel"""
+    def save_to_excel(self, parsed_resumes: List[Dict[str, Any]], output_file: str = 'parsed_resumes.xlsx'):
+        """Save parsed results to Excel file"""
+        try:
+            if not parsed_resumes:
+                logger.warning("No resumes to export to Excel.")
+                return False
+            df = pd.DataFrame(parsed_resumes)
+            df.to_excel(output_file, index=False)
+            logger.info(f"✓ Results exported to {output_file}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error exporting to Excel: {str(e)}")
+            return False
+
+    def validate_extracted_data(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and clean extracted data"""
+        validated_data = parsed_data.copy()
+        
+        # Email validation
+        if validated_data.get('email'):
+            email = validated_data['email']
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+            if not re.match(email_pattern, email):
+                logger.warning(f"Invalid email format detected: {email}")
+                validated_data['email'] = None
+        
+        # Phone validation
+        if validated_data.get('phone_number'):
+            phone = validated_data['phone_number']
+            # Remove non-digit characters except +
+            clean_phone = re.sub(r'[^\d+]', '', phone)
+            if len(clean_phone.replace('+', '')) < 10:
+                logger.warning(f"Invalid phone number detected: {phone}")
+                validated_data['phone_number'] = None
+            else:
+                validated_data['phone_number'] = clean_phone
+        
+        # Experience validation
+        if validated_data.get('total_experience'):
+            exp = validated_data['total_experience']
+            if not isinstance(exp, (int, float)) or exp < 0 or exp > 50:
+                logger.warning(f"Invalid experience value detected: {exp}")
+                validated_data['total_experience'] = None
+        
+        # Skills deduplication and cleaning
+        if validated_data.get('skills'):
+            skills = validated_data['skills']
+            # Remove duplicates (case-insensitive) and empty strings
+            cleaned_skills = []
+            seen_skills = set()
+            for skill in skills:
+                skill_clean = skill.strip()
+                if skill_clean and skill_clean.lower() not in seen_skills:
+                    cleaned_skills.append(skill_clean)
+                    seen_skills.add(skill_clean.lower())
+            
+            validated_data['skills'] = cleaned_skills if cleaned_skills else None
+        
+        # Education cleaning
+        if validated_data.get('education'):
+            education = validated_data['education']
+            # Remove duplicates and very short entries
+            cleaned_education = []
+            seen_education = set()
+            for edu in education:
+                edu_clean = edu.strip()
+                if edu_clean and len(edu_clean) > 3 and edu_clean.lower() not in seen_education:
+                    cleaned_education.append(edu_clean)
+                    seen_education.add(edu_clean.lower())
+            
+            validated_data['education'] = cleaned_education if cleaned_education else None
+        
+        return validated_data
+
+    def extract_additional_info(self, text: str) -> Dict[str, Any]:
+        """Extract additional information like certifications, languages, etc."""
+        additional_info = {}
+        
+        # Extract certifications
+        cert_patterns = [
+            r'certifications?[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)',
+            r'certified?\s+in\s+([^\n,]+)',
+            r'certificate\s+in\s+([^\n,]+)'
+        ]
+        
+        certifications = set()
+        for pattern in cert_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                if match.strip() and len(match.strip()) > 3:
+                    certifications.add(match.strip().title())
+        
+        if certifications:
+            additional_info['certifications'] = list(certifications)
+        
+        # Extract languages
+        lang_patterns = [
+            r'languages?[:\-\s]*([^\n]*(?:\n[^\n]*)*?)(?=\n\s*[A-Z][^:\n]*:|$)',
+            r'fluent\s+in\s+([^\n,]+)',
+            r'native\s+([^\n,]+)\s+speaker'
+        ]
+        
+        languages = set()
+        common_languages = [
+            'english', 'hindi', 'spanish', 'french', 'german', 'chinese', 'japanese',
+            'korean', 'arabic', 'russian', 'portuguese', 'italian', 'dutch',
+            'tamil', 'telugu', 'bengali', 'marathi', 'gujarati', 'punjabi'
+        ]
+        
+        text_lower = text.lower()
+        for lang in common_languages:
+            if lang in text_lower:
+                languages.add(lang.title())
+        
+        for pattern in lang_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                if match.strip():
+                    # Extract individual languages from the match
+                    lang_words = re.findall(r'\b[A-Za-z]+\b', match)
+                    for word in lang_words:
+                        if word.lower() in common_languages:
+                            languages.add(word.title())
+        
+        if languages:
+            additional_info['languages'] = list(languages)
+        
+        # Extract social media/portfolio links
+        url_patterns = [
+            r'(?:https?://)?(?:www\.)?linkedin\.com/in/[\w\-]+',
+            r'(?:https?://)?(?:www\.)?github\.com/[\w\-]+',
+            r'(?:https?://)?(?:www\.)?[\w\-]+\.(?:com|org|net|io)/[\w\-/]*',
+        ]
+        
+        urls = set()
+        for pattern in url_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                if match.strip():
+                    urls.add(match.strip())
+        
+        if urls:
+            additional_info['urls'] = list(urls)
+        
+        return additional_info
+
+    def parse_resume_enhanced(self, file_path: str) -> Optional[Dict[str, Any]]:
+        """Enhanced resume parsing with additional information extraction"""
+        # Get basic parsed data
+        parsed_data = self.parse_resume(file_path)
+        
+        if not parsed_data:
+            return None
+        
+        # Extract text again for additional processing
+        file_extension = os.path.splitext(file_path)[1].lower()
+        
+        if file_extension == '.pdf':
+            text = self.extract_text_from_pdf(file_path)
+        elif file_extension == '.docx':
+            text = self.extract_text_from_docx(file_path)
+        elif file_extension == '.txt':
+            text = self.extract_text_from_txt(file_path)
+        else:
+            return parsed_data
+        
+        # Get additional information
+        additional_info = self.extract_additional_info(text)
+        parsed_data.update(additional_info)
+        
+        # Validate and clean data
+        validated_data = self.validate_extracted_data(parsed_data)
+        
+        return validated_data
+
+    def batch_process_with_progress(self, file_paths: List[str], 
+                                  progress_callback: Optional[callable] = None) -> List[Dict[str, Any]]:
+        """Process multiple files with progress tracking"""
+        parsed_resumes = []
+        total_files = len(file_paths)
+        
+        for i, file_path in enumerate(file_paths):
+            try:
+                parsed_data = self.parse_resume_enhanced(file_path)
+                if parsed_data:
+                    parsed_resumes.append(parsed_data)
+                
+                # Call progress callback if provided
+                if progress_callback:
+                    progress = ((i + 1) / total_files) * 100
+                    progress_callback(progress, f"Processed {os.path.basename(file_path)}")
+                    
+            except Exception as e:
+                logger.error(f"Error processing {file_path}: {str(e)}")
+                if progress_callback:
+                    progress = ((i + 1) / total_files) * 100
+                    progress_callback(progress, f"Failed to process {os.path.basename(file_path)}")
+        
+        return parsed_resumes
+
+# Utility functions for web application integration
+
+def create_resume_parser() -> ResumeParser:
+    """Factory function to create a resume parser instance"""
+    return ResumeParser()
+
+def parse_single_resume_file(file_path: str) -> Optional[Dict[str, Any]]:
+    """Utility function to parse a single resume file"""
+    parser = ResumeParser()
+    return parser.parse_resume_enhanced(file_path)
+
+def parse_multiple_resume_files(file_paths: List[str]) -> List[Dict[str, Any]]:
+    """Utility function to parse multiple resume files"""
+    parser = ResumeParser()
+    return parser.batch_process_with_progress(file_paths)
+
+def validate_file_type(filename: str) -> bool:
+    """Validate if file type is supported"""
+    supported_extensions = ['.pdf', '.docx', '.txt']
+    return os.path.splitext(filename)[1].lower() in supported_extensions
+
+def get_file_info(file_path: str) -> Dict[str, Any]:
+    """Get basic information about a file"""
     try:
-        data = request.json.get('data', [])
-        
-        if not data:
-            return jsonify({'error': 'No data to export'}), 400
-        
-        # Create Excel workbook
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Resume Data"
-        
-        # Define headers
-        headers = ['Name', 'Email', 'Phone', 'Location', 'Education', 'Skills', 'Experience']
-        
-        # Style headers
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        
-        # Write headers
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Write data
-        for row, resume_data in enumerate(data, 2):
-            ws.cell(row=row, column=1, value=resume_data.get('name', ''))
-            ws.cell(row=row, column=2, value=resume_data.get('email', ''))
-            ws.cell(row=row, column=3, value=resume_data.get('phone', ''))
-            ws.cell(row=row, column=4, value=resume_data.get('location', ''))
-            ws.cell(row=row, column=5, value=resume_data.get('education', ''))
-            
-            # Handle skills (convert list to string)
-            skills = resume_data.get('skills', [])
-            skills_str = ', '.join(skills) if isinstance(skills, list) else str(skills)
-            ws.cell(row=row, column=6, value=skills_str)
-            
-            ws.cell(row=row, column=7, value=resume_data.get('experience', ''))
-        
-        # Auto-adjust column widths
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            ws.column_dimensions[column].width = adjusted_width
-        
-        # Save to temporary file
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
-        wb.save(temp_file.name)
-        
-        return send_file(
-            temp_file.name,
-            as_attachment=True,
-            download_name='resume_data.xlsx',
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        
+        stat = os.stat(file_path)
+        return {
+            'filename': os.path.basename(file_path),
+            'size': stat.st_size,
+            'size_mb': round(stat.st_size / (1024 * 1024), 2),
+            'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            'extension': os.path.splitext(file_path)[1].lower(),
+            'is_supported': validate_file_type(file_path)
+        }
     except Exception as e:
-        logger.error(f"Error exporting Excel: {e}")
-        return jsonify({'error': str(e)}), 500
+        return {
+            'filename': os.path.basename(file_path),
+            'error': str(e),
+            'is_supported': False
+        }
 
-@app.route('/api/semantic-search', methods=['POST'])
-def semantic_search_api():
-    """API endpoint for semantic search across stored resumes"""
-    try:
-        query = request.json.get('query', '')
-        
-        if not query or not semantic_model or not resume_embeddings:
-            return jsonify({'error': 'No query provided or no resumes stored'}), 400
-        
-        # Create query embedding
-        query_embedding = semantic_model.encode([query])
-        
-        # Convert stored embeddings to numpy array
-        embeddings_array = np.array(resume_embeddings)
-        
-        # Calculate similarities
-        similarities = cosine_similarity(query_embedding, embeddings_array)[0]
-        
-        # Get top 5 most similar resumes
-        top_indices = np.argsort(similarities)[-5:][::-1]
-        
-        results = []
-        for idx in top_indices:
-            if similarities[idx] > 0.1:  # Minimum similarity threshold
-                results.append({
-                    'index': int(idx),
-                    'similarity': float(similarities[idx]),
-                    'text_snippet': resume_texts[idx][:200] + '...'
-                })
-        
-        return jsonify({'results': results})
-        
-    except Exception as e:
-        logger.error(f"Error in semantic search: {e}")
-        return jsonify({'error': str(e)}), 500
+# Main execution for testing
+if __name__ == "__main__":
+    import argparse
+    
+    # Command line interface for testing
+    parser_cli = argparse.ArgumentParser(description='Resume Parser - Enhanced Version')
+    parser_cli.add_argument('--file', '-f', help='Single file to parse')
+    parser_cli.add_argument('--folder', '-d', help='Folder containing resume files')
+    parser_cli.add_argument('--output', '-o', help='Output JSON file', default='parsed_resumes.json')
+    parser_cli.add_argument('--excel', '-x', help='Output Excel file', default=None)
+    parser_cli.add_argument('--stats', '-s', action='store_true', help='Show detailed statistics')
+    parser_cli.add_argument('--validate', '-v', action='store_true', help='Validate extracted data')
+    
+    args = parser_cli.parse_args()
+    
+    # Create parser instance
+    resume_parser = ResumeParser()
+    
+    if args.file:
+        # Parse single file
+        print(f"Parsing single file: {args.file}")
+        result = resume_parser.parse_resume_enhanced(args.file)
+        if result:
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            if args.output:
+                resume_parser.save_to_json([result], args.output)
+            if args.excel:
+                resume_parser.save_to_excel([result], args.excel)
+        else:
+            print("Failed to parse the file.")
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'semantic_model_loaded': semantic_model is not None,
-        'stored_resumes': len(resume_texts)
-    })
-
-if __name__ == '__main__':
-    print("""
-    🚀 Enhanced AI Resume Parser Server Starting...
+    elif args.folder:
+        # Parse folder
+        print(f"Parsing folder: {args.folder}")
+        results = resume_parser.parse_multiple_resumes(args.folder)
+        if results:
+            resume_parser.display_results(results)
+            if args.output:
+                resume_parser.save_to_json(results, args.output)
+            if args.excel:
+                resume_parser.save_to_excel(results, args.excel)
+            if args.stats:
+                stats = resume_parser.get_processing_statistics()
+                print("\nDETAILED STATISTICS:")
+                print(json.dumps(stats, indent=2))
+        else:
+            print("No resumes were successfully parsed.")
     
-    Features:
-    - Enhanced name extraction with multiple validation strategies
-    - Improved phone number extraction supporting international formats
-    - Better education parsing with degree and institution recognition
-    - Enhanced location extraction with city, state, country patterns
-    - AI-powered text extraction from PDF, DOCX, DOC, TXT files
-    - Semantic search using sentence transformers
-    - Vector database for similarity search
-    - Excel export functionality
-    - RESTful API endpoints
-    
-    Key Improvements:
-    ✅ Better name detection with proper validation
-    ✅ Comprehensive phone number patterns (US, International, Indian formats)
-    ✅ Enhanced education extraction with degree patterns and institutions
-    ✅ Improved location detection with multiple strategies
-    ✅ More robust text processing and validation
-    
-    Endpoints:
-    - / : Main application interface
-    - /api/parse-resume : Parse uploaded resume files
-    - /api/export-excel : Export data to Excel
-    - /api/semantic-search : Semantic search across resumes
-    - /api/health : Health check
-    
-    Requirements Installation:
-    pip install flask flask-cors PyMuPDF python-docx pandas sentence-transformers
-    pip install scikit-learn faiss-cpu openpyxl numpy
-    
-    """)
-    
-    # Run the Flask app
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        print("Please provide either --file or --folder argument")
+        print("Use --help for more information")

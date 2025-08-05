@@ -27,14 +27,17 @@ const Page = () => {
     } else {
       const fetchCandidates = async () => {
         try {
+          console.info("data from backend")
           const response = await fetch("http://localhost:5000/api/parse-resume");
           const data = await response.json();
+          console.info("data from backend");
+          console.info(data);
           setCandidates(Array.isArray(data) ? data : [data]);
         } catch (error) {
           console.error("Failed to fetch candidates:", error);
         }
       };
-
+      
       fetchCandidates();
     }
   }, [location.state]);
@@ -44,7 +47,6 @@ const Page = () => {
   const currentCandidates = candidates.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(candidates.length / itemsPerPage);
 
-  // ✅ CSV Download Function
   const downloadCSV = () => {
     const headers = ["Name", "Phone Number", "Email", "Skills", "Experience"];
     const rows = candidates.map((c) => [
@@ -68,7 +70,6 @@ const Page = () => {
     document.body.removeChild(link);
   };
 
-  // ✅ Excel Download Function
   const downloadExcel = () => {
     import("xlsx").then((xlsx) => {
       const worksheetData = candidates.map((c) => ({
@@ -134,14 +135,12 @@ const Page = () => {
           </Row>
         </div>
 
-        {/* Search Box */}
         <Form.Control
           className="mb-3 w-25"
           type="search"
           placeholder="Search job title or skills"
         />
 
-        {/* ✅ Updated Table Column Order */}
         <Table bordered hover responsive>
           <thead>
             <tr>
@@ -177,7 +176,6 @@ const Page = () => {
           </tbody>
         </Table>
 
-        {/* Pagination */}
         <Pagination className="justify-content-center mt-4">
           <Pagination.Prev
             disabled={currentPage === 1}
@@ -198,7 +196,6 @@ const Page = () => {
           />
         </Pagination>
 
-        {/* Action Buttons */}
         <Row className="justify-content-center mt-5">
           <div className="d-flex flex-wrap gap-3 justify-content-center">
             <Button variant="outline-primary" onClick={downloadExcel}>

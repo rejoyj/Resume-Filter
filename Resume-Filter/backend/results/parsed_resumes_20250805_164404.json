@@ -1,0 +1,53 @@
+[
+  {
+    "file_name": "20250805_153433_Karthik_Resume_2.pdf",
+    "file_path": "uploads\\20250805_153433_Karthik_Resume_2.pdf",
+    "name": "Karthikeyan A",
+    "email": "pework.karthiik@gmail.com",
+    "phone_number": null,
+    "skills": [
+      "React",
+      "Sql",
+      "Html",
+      "Java",
+      "Mysql",
+      "Github",
+      "Css",
+      "Photoshop",
+      "Networking",
+      "Firebase",
+      "Go",
+      "Git",
+      "R",
+      "Next.Js",
+      "Leadership",
+      "Python",
+      "C++",
+      "C",
+      "Express",
+      "Mongodb",
+      "Figma"
+    ],
+    "education": [
+      "Rce Platform Featuring Product Listings",
+      "Nt And Purchase",
+      "St Practices And Solutions To Ensure Seamless User",
+      "Nted An Admin Dashboard For Dynamic Updates To Portfolio Content",
+      "Nted An Admin Dashboard For Creating",
+      "S And Prototypes",
+      "Chennai",
+      "Works : Reactjs",
+      "Engineering Chennai",
+      "Nted Personalized User Experiences With Login And Logout Functionalities",
+      "Nt System To Store And Retrieve User Messages From The Contact Section In Real-Time",
+      "Tween Frontend And Backend"
+    ],
+    "location": "Karthikeyan A\nChennai, TamilNadu",
+    "total_experience": 4,
+    "processed_at": "2025-08-05T16:44:03.539399",
+    "processing_time": 4.448551,
+    "languages": [
+      "Tamil"
+    ]
+  }
+]
